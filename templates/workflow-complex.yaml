@@ -1,0 +1,51 @@
+name: Complex Workflow Example
+beacon_id: "YOUR_BEACON_ID_HERE"
+
+actions:
+  # Run whoami BOF
+  - name: whoami_check
+    type: bof_string
+    parameters:
+      bof: /path/to/whoami.o
+      entrypoint: go
+      arguments: ""
+
+  # Conditional execution based on whoami output
+  - name: check_for_impersonate
+    type: bof_string
+    parameters:
+      bof: /path/to/check_privs.o
+      entrypoint: go
+    on_success:
+      # If SeImpersonatePrivilege is found, run exploit
+      - name: run_exploit
+        type: bof_pack
+        parameters:
+          bof: /path/to/exploit.o
+          entrypoint: go
+          arguments:
+            - type: string
+              value: "exploit"
+            - type: int
+              value: 1
+        conditions:
+          - type: output_check
+            source: whoami_check
+            operator: contains
+            value: SeImpersonatePrivilege
+            case_sensitive: false
+        on_success:
+          - name: verify_elevated
+            type: getuid
+
+  # Alternative path if no impersonate privilege
+  - name: try_other_exploit
+    type: bof_string
+    parameters:
+      bof: /path/to/alt_exploit.o
+    conditions:
+      - type: output_check
+        source: whoami_check
+        operator: not_contains
+        value: SeImpersonatePrivilege
+        case_sensitive: false

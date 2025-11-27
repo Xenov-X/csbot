@@ -1,0 +1,46 @@
+name: Domain Reconnaissance
+# Enumerate Active Directory environment
+
+actions:
+  # Basic domain info
+  - name: domain_info
+    type: shell
+    parameters:
+      command: net config workstation
+
+  # Domain admins
+  - name: domain_admins
+    type: shell
+    parameters:
+      command: net group "Domain Admins" /domain
+
+  # Enterprise admins
+  - name: enterprise_admins
+    type: shell
+    parameters:
+      command: net group "Enterprise Admins" /domain
+
+  # Domain users
+  - name: domain_users
+    type: shell
+    parameters:
+      command: net user /domain
+
+  # Domain groups
+  - name: domain_groups
+    type: shell
+    parameters:
+      command: net group /domain
+
+  # Domain trusts
+  - name: domain_trusts
+    type: shell
+    parameters:
+      command: nltest /domain_trusts
+
+
+  # Check for interesting SPNs
+  - name: spn_enum
+    type: shell
+    parameters:
+      command: setspn -T domain -Q */*

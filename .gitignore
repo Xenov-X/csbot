@@ -1,0 +1,4 @@
+.env
+config.yaml
+*.log
+csbot

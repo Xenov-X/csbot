@@ -1,0 +1,15 @@
+server:
+  host: 192.168.1.100
+  port: 50443
+  username: operator
+  password: changeme
+  insecure: true
+
+logging:
+  level: info
+  file: ""
+  json_format: false
+
+timeouts:
+  http_timeout: 30
+  task_timeout: 300

