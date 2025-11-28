@@ -1,0 +1,14 @@
+name: SeImpersonate Privilege Escalation
+# beacon_id: "YOUR_BEACON_ID"
+actions:
+
+  - name: dir
+    type: bof_pack_custom # bof_pack Currently broken
+    parameters:
+      bof: /opt/bofs/CS-Situational-Awareness-BOF/SA/dir/dir.x64.o
+      entrypoint: go
+      arguments:
+        - type: string #or z
+          value: "C:\\Windows"
+        - type: s # or short
+          value: 0

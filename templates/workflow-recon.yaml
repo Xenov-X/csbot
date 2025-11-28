@@ -1,0 +1,33 @@
+name: Screenshot and Enumeration
+# Demonstrates shell and screenshot actions
+
+actions:
+  # Capture screenshot
+  - name: capture_screenshot
+    type: screenshot
+
+  # Get system information
+  - name: system_info
+    type: shell
+    parameters:
+      command: systeminfo
+
+  # List running processes
+  - name: list_processes
+    type: shell
+    parameters:
+      command: tasklist /v
+
+  # Check for defensive tools
+  - name: check_av
+    type: shell
+    parameters:
+      command: wmic /namespace:\\root\securitycenter2 path antivirusproduct get displayname
+    on_success:
+      # If AV detected, capture another screenshot
+      - name: av_screenshot
+        type: screenshot
+        conditions:
+          - source: check_av
+            operator: contains
+            value: "Defender"

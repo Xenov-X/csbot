@@ -1,0 +1,26 @@
+name: File Operations Workflow
+# Demonstrates upload/download actions
+
+actions:
+  # Upload a tool to the beacon's current working directory
+  - name: upload_tool
+    type: upload
+    parameters:
+      local_path: /opt/tools/exploit.exe
+
+  # Execute the tool (using relative path since it's in CWD)
+  - name: run_tool
+    type: shell
+    parameters:
+      command: .\exploit.exe --check
+
+  # Download results
+  - name: download_results
+    type: download
+    parameters:
+      remote_path: results.txt
+    on_success:
+      - name: cleanup
+        type: shell
+        parameters:
+          command: del exploit.exe results.txt

