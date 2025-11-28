@@ -216,6 +216,7 @@ actions:
 | `upload` | Upload file to beacon CWD | `local_path` |
 | `download` | Download file | `remote_path` |
 | `screenshot` | Capture screenshot | None |
+| `consolecommand` | Execute CS console command | `command`, `arguments`, `files` |
 | `sleep` | Pause execution | `duration` |
 | `bof_string` | Execute BOF (string args) | `bof`, `entrypoint`, `arguments` |
 | `bof_pack` | Execute BOF (typed args) | `bof`, `entrypoint`, `arguments` |

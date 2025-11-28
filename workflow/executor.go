@@ -298,6 +298,8 @@ func (e *Executor) executeAction(ctx context.Context, client *csclient.Client, b
 		return e.executeDownload(ctx, client, beaconID, action)
 	case "screenshot":
 		return e.executeScreenshot(ctx, client, beaconID)
+	case "consolecommand":
+		return e.executeConsoleCommand(ctx, client, beaconID, action)
 	default:
 		return "", fmt.Errorf("unknown action type: %s", action.Type)
 	}
@@ -795,6 +797,40 @@ func (e *Executor) executeBOFPackCustom(ctx context.Context, client *csclient.Cl
 func (e *Executor) executeScreenshot(ctx context.Context, client *csclient.Client, beaconID string) (string, error) {
 	// Use spawn method by default (simpler, no PID/arch required)
 	resp, err := client.ScreenshotSpawn(ctx, beaconID)
+	if err != nil {
+		return "", err
+	}
+
+	return e.waitForOutput(ctx, client, resp.TaskID)
+}
+
+// executeConsoleCommand executes a console command on the beacon
+func (e *Executor) executeConsoleCommand(ctx context.Context, client *csclient.Client, beaconID string, action Action) (string, error) {
+	command, ok := action.Parameters["command"].(string)
+	if !ok {
+		return "", fmt.Errorf("command parameter required for consolecommand")
+	}
+
+	cmd := csclient.CommandDto{
+		Command: command,
+	}
+
+	// Add optional arguments
+	if args, ok := action.Parameters["arguments"].(string); ok {
+		cmd.Arguments = args
+	}
+
+	// Add optional files map for @files/ references
+	if filesInterface, ok := action.Parameters["files"].(map[string]interface{}); ok {
+		cmd.Files = make(map[string]string)
+		for key, value := range filesInterface {
+			if strVal, ok := value.(string); ok {
+				cmd.Files[key] = strVal
+			}
+		}
+	}
+
+	resp, err := client.ExecuteConsoleCommand(ctx, beaconID, cmd)
 	if err != nil {
 		return "", err
 	}

@@ -130,6 +130,7 @@ func (v *Validator) validateAction(action Action, index int, seenNames map[strin
 		"upload":          true,
 		"download":        true,
 		"screenshot":      true,
+		"consolecommand":  true,
 	}
 
 	if !validTypes[action.Type] {
@@ -191,6 +192,16 @@ func (v *Validator) validateAction(action Action, index int, seenNames map[strin
 			errors = append(errors, ValidationError{
 				Type:    prefix,
 				Message: "download action requires 'remote_path' parameter",
+			})
+		}
+	}
+
+	// Validate consolecommand action
+	if action.Type == "consolecommand" {
+		if action.Parameters == nil || action.Parameters["command"] == nil {
+			errors = append(errors, ValidationError{
+				Type:    prefix,
+				Message: "consolecommand action requires 'command' parameter",
 			})
 		}
 	}

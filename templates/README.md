@@ -186,6 +186,7 @@ Templates can be customized by:
 - **screenshot** - Capture screenshot from beacon
 - **download** - Download file from beacon to team server
 - **upload** - Upload file to beacon's CWD (⚠️ currently has issues)
+- **consolecommand** - Execute any CS console command (including server aliases)
 - **bof_string** - Execute BOF with string arguments
 - **bof_pack_custom** - Execute BOF with typed arguments (client-side packing)
 - **bof_pack** - Execute BOF with typed arguments (⚠️ server-side issues)

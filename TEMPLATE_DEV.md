@@ -165,6 +165,63 @@ Capture screenshot from beacon.
 
 **Output**: Screenshot status (image saved to CS downloads folder)
 
+#### consolecommand
+
+Execute any Cobalt Strike console command (including server-side aliases like execute-assembly, mimikatz, etc.).
+
+```yaml
+# Simple command
+- name: check_processes
+  type: consolecommand
+  parameters:
+    command: "ps"  # Required: Console command
+
+# Command with arguments
+- name: run_mimikatz
+  type: consolecommand
+  parameters:
+    command: "mimikatz"
+    arguments: "privilege::debug sekurlsa::logonpasswords"
+
+# Command with @files references (inline base64 files)
+- name: execute_assembly
+  type: consolecommand
+  parameters:
+    command: "execute-assembly"
+    arguments: "@files/Seatbelt.exe -group=all"
+    files:
+      Seatbelt.exe: "TVqQAAMAAAAEAAAA..."  # base64 encoded file content
+
+# Command with @artifacts references (teamserver-stored files)
+- name: spawn_payload
+  type: consolecommand
+  parameters:
+    command: "spawn"
+    arguments: "@artifacts/beacon.exe"
+
+# With variable interpolation
+- name: execute_custom
+  type: consolecommand
+  parameters:
+    command: "${console_cmd}"
+    arguments: "${cmd_args}"
+```
+
+**Output**: Command output (varies by command)
+
+**Use Cases**:
+- Execute server-side aliases not directly exposed via REST API
+- Run custom aggressor script commands
+- Execute-assembly for .NET assemblies
+- Mimikatz via built-in alias
+- Any command available in CS console
+
+**Notes**:
+- `command` parameter is required
+- `arguments` supports @files/ and @artifacts/ references
+- `files` map provides base64 content for @files/ references
+- Variable interpolation works in all parameters
+
 #### sleep
 
 Pause workflow execution.
