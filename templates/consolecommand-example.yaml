@@ -25,50 +25,20 @@ actions:
         operator: equals
         value: "true"
 
-  # Execute-assembly with @files reference
-  - name: run_seatbelt
+  # Simple command - process list
+  - name: working dir
     type: consolecommand
     parameters:
-      command: "execute-assembly"
-      arguments: "@files/Seatbelt.exe -group=system"
-      files:
-        # In production, replace with actual base64 encoded Seatbelt.exe
-        Seatbelt.exe: "TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAA4fug4AtAnNIbgBTM0hVGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4gRE9TIG1vZGUuDQ0KJAAAAAAAAABQRQAATAEDAAAAAAAAAAAAAAAAAAAAAAABACAAAAAAAAAAAAAAAA=="
+      command: "pwd"
 
-  # Spawn with @artifacts reference
-  - name: spawn_beacon
+  # BOFNet - Serverside alias usage
+  - name: bofnet init
     type: consolecommand
     parameters:
-      command: "spawn"
-      arguments: "@artifacts/beacon_http.exe"
+      command: "bofnet_init"
 
-  # Custom aggressor command (if defined server-side)
-  - name: custom_recon
+  # BOFNet - Serverside alias usage - Note binary path is on the server
+  - name: bofnet load dir
     type: consolecommand
     parameters:
-      command: "custom_enum"
-      arguments: "--full"
-
-  # Token manipulation
-  - name: steal_token
-    type: consolecommand
-    parameters:
-      command: "steal_token"
-      arguments: "1234"  # Replace with actual PID
-    conditions:
-      - source: list_processes
-        operator: contains
-        value: "lsass.exe"
-
-  # Cleanup on success
-  - name: cleanup_logs
-    type: consolecommand
-    parameters:
-      command: "shell"
-      arguments: "del C:\\Windows\\Temp\\*.log"
-    on_success:
-      - name: verify_cleanup
-        type: consolecommand
-        parameters:
-          command: "shell"
-          arguments: "dir C:\\Windows\\Temp"
+      command: "bofnet_load /path/to/bofnet/HelloWorld.dll"
