@@ -23,6 +23,93 @@ type BeaconFilter struct {
 	MinutesAgo int    // Only show beacons that checked in within this many minutes (0 = no filter)
 }
 
+// ListBeacons displays a non-interactive table of beacons and exits
+func ListBeacons(ctx context.Context, client *csclient.Client, filter *BeaconFilter) error {
+	// Fetch beacons
+	allBeacons, err := client.ListBeacons(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to list beacons: %w", err)
+	}
+
+	// Apply filters
+	beacons := filterBeacons(allBeacons, filter)
+
+	if len(beacons) == 0 {
+		if filter != nil {
+			return fmt.Errorf("no beacons match the filter criteria")
+		}
+		return fmt.Errorf("no beacons available")
+	}
+
+	// Sort beacons by most recent check-in first
+	sort.Slice(beacons, func(i, j int) bool {
+		return beacons[i].LastCheckinTime.After(beacons[j].LastCheckinTime)
+	})
+
+	// Display filter info if applied
+	if filter != nil && (filter.User != "" || filter.Hostname != "" || filter.AdminOnly || filter.AliveOnly || filter.MinutesAgo > 0) {
+		fmt.Println("\n🔍 Active Filters:")
+		if filter.User != "" {
+			fmt.Printf("  - User contains: %s\n", filter.User)
+		}
+		if filter.Hostname != "" {
+			fmt.Printf("  - Hostname contains: %s\n", filter.Hostname)
+		}
+		if filter.AdminOnly {
+			fmt.Println("  - Admin only: yes")
+		}
+		if filter.AliveOnly {
+			fmt.Println("  - Alive only: yes")
+		}
+		if filter.MinutesAgo > 0 {
+			fmt.Printf("  - Last check-in within: %d minutes\n", filter.MinutesAgo)
+		}
+		fmt.Printf("  - Results: %d/%d beacons\n", len(beacons), len(allBeacons))
+	}
+
+	// Display beacons in a table
+	fmt.Println("\nAvailable Beacons:")
+	fmt.Println(strings.Repeat("=", 130))
+
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+	fmt.Fprintln(w, "#\tBeacon ID\tUser\tHostname\tPID\tInternal IP\tLast Check-in\tSleep\tJitter\tAdmin\tAlive")
+	fmt.Fprintln(w, strings.Repeat("-", 10)+"\t"+strings.Repeat("-", 10)+"\t"+strings.Repeat("-", 20)+"\t"+
+		strings.Repeat("-", 15)+"\t"+strings.Repeat("-", 8)+"\t"+strings.Repeat("-", 15)+"\t"+strings.Repeat("-", 20)+"\t"+
+		strings.Repeat("-", 8)+"\t"+strings.Repeat("-", 6)+"\t"+strings.Repeat("-", 5)+"\t"+strings.Repeat("-", 5))
+
+	for i, beacon := range beacons {
+		adminStatus := ""
+		if beacon.IsAdmin {
+			adminStatus = "✓"
+		}
+
+		aliveStatus := ""
+		if beacon.Alive {
+			aliveStatus = "✓"
+		}
+
+		sleepInfo := fmt.Sprintf("%ds", beacon.Sleep.Sleep)
+		jitterInfo := fmt.Sprintf("%d%%", beacon.Sleep.Jitter)
+
+		// Format last checkin time
+		timeAgo := formatTimeAgo(time.Since(beacon.LastCheckinTime))
+
+		// Truncate long values
+		user := truncate(beacon.User, 20)
+		hostname := truncate(beacon.Computer, 15)
+		bid := truncate(beacon.BID, 10)
+
+		fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			i+1, bid, user, hostname, beacon.PID, beacon.Internal, timeAgo, sleepInfo, jitterInfo, adminStatus, aliveStatus)
+	}
+	w.Flush()
+
+	fmt.Println(strings.Repeat("=", 130))
+	fmt.Printf("\nTotal: %d beacons\n", len(beacons))
+
+	return nil
+}
+
 // SelectBeacon displays an interactive table of beacons and lets the user select one
 func SelectBeacon(ctx context.Context, client *csclient.Client) (string, error) {
 	return SelectBeaconWithFilter(ctx, client, nil)
@@ -74,12 +161,12 @@ func SelectBeaconWithFilter(ctx context.Context, client *csclient.Client, filter
 
 	// Display beacons in a table
 	fmt.Println("\nAvailable Beacons:")
-	fmt.Println(strings.Repeat("=", 120))
+	fmt.Println(strings.Repeat("=", 130))
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
-	fmt.Fprintln(w, "#\tBeacon ID\tUser\tHostname\tInternal IP\tLast Check-in\tSleep\tJitter\tAdmin\tAlive")
+	fmt.Fprintln(w, "#\tBeacon ID\tUser\tHostname\tPID\tInternal IP\tLast Check-in\tSleep\tJitter\tAdmin\tAlive")
 	fmt.Fprintln(w, strings.Repeat("-", 10)+"\t"+strings.Repeat("-", 10)+"\t"+strings.Repeat("-", 20)+"\t"+
-		strings.Repeat("-", 15)+"\t"+strings.Repeat("-", 15)+"\t"+strings.Repeat("-", 20)+"\t"+
+		strings.Repeat("-", 15)+"\t"+strings.Repeat("-", 8)+"\t"+strings.Repeat("-", 15)+"\t"+strings.Repeat("-", 20)+"\t"+
 		strings.Repeat("-", 8)+"\t"+strings.Repeat("-", 6)+"\t"+strings.Repeat("-", 5)+"\t"+strings.Repeat("-", 5))
 
 	for i, beacon := range beacons {
@@ -104,12 +191,12 @@ func SelectBeaconWithFilter(ctx context.Context, client *csclient.Client, filter
 		hostname := truncate(beacon.Computer, 15)
 		bid := truncate(beacon.BID, 10)
 
-		fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-			i+1, bid, user, hostname, beacon.Internal, timeAgo, sleepInfo, jitterInfo, adminStatus, aliveStatus)
+		fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			i+1, bid, user, hostname, beacon.PID, beacon.Internal, timeAgo, sleepInfo, jitterInfo, adminStatus, aliveStatus)
 	}
 	w.Flush()
 
-	fmt.Println(strings.Repeat("=", 120))
+	fmt.Println(strings.Repeat("=", 130))
 
 	// Prompt for selection
 	reader := bufio.NewReader(os.Stdin)
