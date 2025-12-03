@@ -32,6 +32,13 @@ func main() {
 		outputFile   = flag.String("output-file", "", "Write output to file instead of stdout")
 		dryRun       = flag.Bool("dry-run", false, "Validate and show what would execute without running")
 		listBeacons  = flag.Bool("list-beacons", false, "List all beacons and exit")
+
+		// Beacon list filters (only applicable with -list-beacons)
+		listBeaconsUser     = flag.String("list-beacons-user", "", "Filter by username (partial match, requires -list-beacons)")
+		listBeaconsHostname = flag.String("list-beacons-hostname", "", "Filter by hostname (partial match, requires -list-beacons)")
+		listBeaconsAdmin    = flag.Bool("list-beacons-admin", false, "Only show admin beacons (requires -list-beacons)")
+		listBeaconsAlive    = flag.Bool("list-beacons-alive", false, "Only show alive beacons (requires -list-beacons)")
+		listBeaconsMinutes  = flag.Int("list-beacons-minutes", 0, "Only show beacons checked in within last N minutes (requires -list-beacons)")
 	)
 
 	flag.Parse()
@@ -119,8 +126,20 @@ func main() {
 		}
 		log.Info("Authentication successful")
 
+		// Build filter from flags
+		var filter *selector.BeaconFilter
+		if *listBeaconsUser != "" || *listBeaconsHostname != "" || *listBeaconsAdmin || *listBeaconsAlive || *listBeaconsMinutes > 0 {
+			filter = &selector.BeaconFilter{
+				User:       *listBeaconsUser,
+				Hostname:   *listBeaconsHostname,
+				AdminOnly:  *listBeaconsAdmin,
+				AliveOnly:  *listBeaconsAlive,
+				MinutesAgo: *listBeaconsMinutes,
+			}
+		}
+
 		// List beacons and exit
-		if err := selector.ListBeacons(ctx, client, nil); err != nil {
+		if err := selector.ListBeacons(ctx, client, filter); err != nil {
 			log.Error("Failed to list beacons: %v", err)
 			os.Exit(1)
 		}
