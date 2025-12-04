@@ -269,13 +269,13 @@ func (v *Validator) validateBOFAction(action Action, prefix string) []Validation
 	case strings.HasPrefix(bofPath, "@files/") || strings.HasPrefix(bofPath, "@artifacts/"): //remote path check
 		errors = append(errors, ValidationError{
 			Type:     prefix,
-			Message:  "BOF file path check skipped due to remote path",
+			Message:  fmt.Sprintf("BOF file path check skipped due to remote path: %s", bofPath),
 			Severity: "warning",
 		})
 	case strings.Contains(bofPath, "${") && strings.Contains(bofPath, "}"): // Variable check
 		errors = append(errors, ValidationError{
 			Type:     prefix,
-			Message:  "BOF file path check skipped due to runtime variable interpolation",
+			Message:  fmt.Sprintf("BOF file path check skipped due to runtime variable interpolation: %s", bofPath),
 			Severity: "warning",
 		})
 	default:
