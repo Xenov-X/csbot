@@ -100,6 +100,23 @@ func (v *Validator) validateAction(action Action, index int, seenNames map[strin
 		"upload":          true,
 		"download":        true,
 		"screenshot":      true,
+		// File & directory operations
+		"cd":        true,
+		"ls":        true,
+		"pwd":       true,
+		"mkdir":     true,
+		"cp":        true,
+		"mv":        true,
+		"rm":        true,
+		"drives":    true,
+		"timestomp": true,
+		// Process management operations
+		"ps":       true,
+		"kill":     true,
+		"getprivs": true,
+		"setenv":   true,
+		"exit":     true,
+		"job_stop": true,
 	}
 
 	if !validTypes[action.Type] {
@@ -161,6 +178,114 @@ func (v *Validator) validateAction(action Action, index int, seenNames map[strin
 			errors = append(errors, ValidationError{
 				Type:    prefix,
 				Message: "download action requires 'remote_path' parameter",
+			})
+		}
+	}
+
+	// Validate cd action
+	if action.Type == "cd" {
+		if action.Parameters == nil || action.Parameters["path"] == nil {
+			errors = append(errors, ValidationError{
+				Type:    prefix,
+				Message: "cd action requires 'path' parameter",
+			})
+		}
+	}
+
+	// Validate mkdir action
+	if action.Type == "mkdir" {
+		if action.Parameters == nil || action.Parameters["folder"] == nil {
+			errors = append(errors, ValidationError{
+				Type:    prefix,
+				Message: "mkdir action requires 'folder' parameter",
+			})
+		}
+	}
+
+	// Validate cp action
+	if action.Type == "cp" {
+		if action.Parameters == nil || action.Parameters["src"] == nil {
+			errors = append(errors, ValidationError{
+				Type:    prefix,
+				Message: "cp action requires 'src' parameter",
+			})
+		}
+		if action.Parameters == nil || action.Parameters["dst"] == nil {
+			errors = append(errors, ValidationError{
+				Type:    prefix,
+				Message: "cp action requires 'dst' parameter",
+			})
+		}
+	}
+
+	// Validate mv action
+	if action.Type == "mv" {
+		if action.Parameters == nil || action.Parameters["source"] == nil {
+			errors = append(errors, ValidationError{
+				Type:    prefix,
+				Message: "mv action requires 'source' parameter",
+			})
+		}
+		if action.Parameters == nil || action.Parameters["destination"] == nil {
+			errors = append(errors, ValidationError{
+				Type:    prefix,
+				Message: "mv action requires 'destination' parameter",
+			})
+		}
+	}
+
+	// Validate rm action
+	if action.Type == "rm" {
+		if action.Parameters == nil || action.Parameters["path"] == nil {
+			errors = append(errors, ValidationError{
+				Type:    prefix,
+				Message: "rm action requires 'path' parameter",
+			})
+		}
+	}
+
+	// Validate timestomp action
+	if action.Type == "timestomp" {
+		if action.Parameters == nil || action.Parameters["source"] == nil {
+			errors = append(errors, ValidationError{
+				Type:    prefix,
+				Message: "timestomp action requires 'source' parameter",
+			})
+		}
+		if action.Parameters == nil || action.Parameters["destination"] == nil {
+			errors = append(errors, ValidationError{
+				Type:    prefix,
+				Message: "timestomp action requires 'destination' parameter",
+			})
+		}
+	}
+
+	// Validate kill action
+	if action.Type == "kill" {
+		if action.Parameters == nil || action.Parameters["pid"] == nil {
+			errors = append(errors, ValidationError{
+				Type:    prefix,
+				Message: "kill action requires 'pid' parameter",
+			})
+		}
+	}
+
+	// Validate setenv action
+	if action.Type == "setenv" {
+		if action.Parameters == nil || action.Parameters["key"] == nil {
+			errors = append(errors, ValidationError{
+				Type:    prefix,
+				Message: "setenv action requires 'key' parameter",
+			})
+		}
+	}
+
+	// Validate job_stop action
+	if action.Type == "job_stop" {
+		if action.Parameters == nil || action.Parameters["jid"] == nil {
+			errors = append(errors, ValidationError{
+				Type:    prefix,
+				Message: "job_stop action requires 'jid' parameter",
 			})
 		}
 	}

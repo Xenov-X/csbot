@@ -297,6 +297,38 @@ func (e *Executor) executeAction(ctx context.Context, client *csclient.Client, b
 		return e.executeDownload(ctx, client, beaconID, action)
 	case "screenshot":
 		return e.executeScreenshot(ctx, client, beaconID)
+	// File & directory operations
+	case "cd":
+		return e.executeCd(ctx, client, beaconID, action)
+	case "ls":
+		return e.executeLs(ctx, client, beaconID, action)
+	case "pwd":
+		return e.executePwd(ctx, client, beaconID)
+	case "mkdir":
+		return e.executeMkdir(ctx, client, beaconID, action)
+	case "cp":
+		return e.executeCp(ctx, client, beaconID, action)
+	case "mv":
+		return e.executeMv(ctx, client, beaconID, action)
+	case "rm":
+		return e.executeRm(ctx, client, beaconID, action)
+	case "drives":
+		return e.executeDrives(ctx, client, beaconID)
+	case "timestomp":
+		return e.executeTimestomp(ctx, client, beaconID, action)
+	// Process management operations
+	case "ps":
+		return e.executePs(ctx, client, beaconID)
+	case "kill":
+		return e.executeKill(ctx, client, beaconID, action)
+	case "getprivs":
+		return e.executeGetPrivs(ctx, client, beaconID)
+	case "setenv":
+		return e.executeSetEnv(ctx, client, beaconID, action)
+	case "exit":
+		return e.executeExit(ctx, client, beaconID)
+	case "job_stop":
+		return e.executeJobStop(ctx, client, beaconID, action)
 	default:
 		return "", fmt.Errorf("unknown action type: %s", action.Type)
 	}
@@ -458,6 +490,31 @@ func (e *Executor) executeBOFPack(ctx context.Context, client *csclient.Client, 
 				args = append(args, csclient.ShortArg{
 					Type:  "short",
 					Value: int(argMap["value"].(float64)),
+				})
+			case "binary":
+				args = append(args, csclient.BinaryArg{
+					Type:  "binary",
+					Value: argMap["value"].(string),
+				})
+			case "binarypath":
+				filePath := argMap["value"].(string)
+				fileData, err := os.ReadFile(filePath)
+				if err != nil {
+					return "", fmt.Errorf("failed to read binarypath file %s: %w", filePath, err)
+				}
+				args = append(args, csclient.BinaryArg{
+					Type:  "binary",
+					Value: base64.StdEncoding.EncodeToString(fileData),
+				})
+			case "binarylen":
+				filePath := argMap["value"].(string)
+				fileInfo, err := os.Stat(filePath)
+				if err != nil {
+					return "", fmt.Errorf("failed to stat binarylen file %s: %w", filePath, err)
+				}
+				args = append(args, csclient.IntArg{
+					Type:  "int",
+					Value: int(fileInfo.Size()),
 				})
 			}
 		}
@@ -794,6 +851,240 @@ func (e *Executor) executeBOFPackCustom(ctx context.Context, client *csclient.Cl
 func (e *Executor) executeScreenshot(ctx context.Context, client *csclient.Client, beaconID string) (string, error) {
 	// Use spawn method by default (simpler, no PID/arch required)
 	resp, err := client.ScreenshotSpawn(ctx, beaconID)
+	if err != nil {
+		return "", err
+	}
+
+	return e.waitForOutput(ctx, client, resp.TaskID)
+}
+
+// --- File & Directory Operation Handlers ---
+
+// executeCd changes the beacon's working directory
+func (e *Executor) executeCd(ctx context.Context, client *csclient.Client, beaconID string, action Action) (string, error) {
+	path, ok := action.Parameters["path"].(string)
+	if !ok {
+		return "", fmt.Errorf("path parameter required for cd")
+	}
+
+	resp, err := client.Cd(ctx, beaconID, path)
+	if err != nil {
+		return "", err
+	}
+
+	return e.waitForOutput(ctx, client, resp.TaskID)
+}
+
+// executeLs lists directory contents
+func (e *Executor) executeLs(ctx context.Context, client *csclient.Client, beaconID string, action Action) (string, error) {
+	path, _ := action.Parameters["path"].(string) // optional
+
+	resp, err := client.Ls(ctx, beaconID, path)
+	if err != nil {
+		return "", err
+	}
+
+	return e.waitForOutput(ctx, client, resp.TaskID)
+}
+
+// executePwd gets current working directory
+func (e *Executor) executePwd(ctx context.Context, client *csclient.Client, beaconID string) (string, error) {
+	resp, err := client.Pwd(ctx, beaconID)
+	if err != nil {
+		return "", err
+	}
+
+	return e.waitForOutput(ctx, client, resp.TaskID)
+}
+
+// executeMkdir creates a directory
+func (e *Executor) executeMkdir(ctx context.Context, client *csclient.Client, beaconID string, action Action) (string, error) {
+	folder, ok := action.Parameters["folder"].(string)
+	if !ok {
+		return "", fmt.Errorf("folder parameter required for mkdir")
+	}
+
+	resp, err := client.Mkdir(ctx, beaconID, folder)
+	if err != nil {
+		return "", err
+	}
+
+	return e.waitForOutput(ctx, client, resp.TaskID)
+}
+
+// executeCp copies a file
+func (e *Executor) executeCp(ctx context.Context, client *csclient.Client, beaconID string, action Action) (string, error) {
+	src, ok := action.Parameters["src"].(string)
+	if !ok {
+		return "", fmt.Errorf("src parameter required for cp")
+	}
+	dst, ok := action.Parameters["dst"].(string)
+	if !ok {
+		return "", fmt.Errorf("dst parameter required for cp")
+	}
+
+	resp, err := client.Cp(ctx, beaconID, src, dst)
+	if err != nil {
+		return "", err
+	}
+
+	return e.waitForOutput(ctx, client, resp.TaskID)
+}
+
+// executeMv moves/renames a file
+func (e *Executor) executeMv(ctx context.Context, client *csclient.Client, beaconID string, action Action) (string, error) {
+	source, ok := action.Parameters["source"].(string)
+	if !ok {
+		return "", fmt.Errorf("source parameter required for mv")
+	}
+	destination, ok := action.Parameters["destination"].(string)
+	if !ok {
+		return "", fmt.Errorf("destination parameter required for mv")
+	}
+
+	resp, err := client.Mv(ctx, beaconID, source, destination)
+	if err != nil {
+		return "", err
+	}
+
+	return e.waitForOutput(ctx, client, resp.TaskID)
+}
+
+// executeRm removes a file or folder
+func (e *Executor) executeRm(ctx context.Context, client *csclient.Client, beaconID string, action Action) (string, error) {
+	path, ok := action.Parameters["path"].(string)
+	if !ok {
+		return "", fmt.Errorf("path parameter required for rm")
+	}
+
+	resp, err := client.Rm(ctx, beaconID, path)
+	if err != nil {
+		return "", err
+	}
+
+	return e.waitForOutput(ctx, client, resp.TaskID)
+}
+
+// executeDrives lists drives
+func (e *Executor) executeDrives(ctx context.Context, client *csclient.Client, beaconID string) (string, error) {
+	resp, err := client.Drives(ctx, beaconID)
+	if err != nil {
+		return "", err
+	}
+
+	return e.waitForOutput(ctx, client, resp.TaskID)
+}
+
+// executeTimestomp copies file timestamps from source to destination
+func (e *Executor) executeTimestomp(ctx context.Context, client *csclient.Client, beaconID string, action Action) (string, error) {
+	source, ok := action.Parameters["source"].(string)
+	if !ok {
+		return "", fmt.Errorf("source parameter required for timestomp")
+	}
+	destination, ok := action.Parameters["destination"].(string)
+	if !ok {
+		return "", fmt.Errorf("destination parameter required for timestomp")
+	}
+
+	resp, err := client.Timestomp(ctx, beaconID, source, destination)
+	if err != nil {
+		return "", err
+	}
+
+	return e.waitForOutput(ctx, client, resp.TaskID)
+}
+
+// --- Process Management Handlers ---
+
+// executePs lists processes
+func (e *Executor) executePs(ctx context.Context, client *csclient.Client, beaconID string) (string, error) {
+	resp, err := client.Ps(ctx, beaconID)
+	if err != nil {
+		return "", err
+	}
+
+	return e.waitForOutput(ctx, client, resp.TaskID)
+}
+
+// executeKill terminates a process by PID
+func (e *Executor) executeKill(ctx context.Context, client *csclient.Client, beaconID string, action Action) (string, error) {
+	pidVal, ok := action.Parameters["pid"]
+	if !ok {
+		return "", fmt.Errorf("pid parameter required for kill")
+	}
+
+	var pid int
+	switch v := pidVal.(type) {
+	case float64:
+		pid = int(v)
+	case int:
+		pid = v
+	default:
+		return "", fmt.Errorf("pid parameter must be a number")
+	}
+
+	resp, err := client.Kill(ctx, beaconID, pid)
+	if err != nil {
+		return "", err
+	}
+
+	return e.waitForOutput(ctx, client, resp.TaskID)
+}
+
+// executeGetPrivs enables all available privileges
+func (e *Executor) executeGetPrivs(ctx context.Context, client *csclient.Client, beaconID string) (string, error) {
+	resp, err := client.GetPrivs(ctx, beaconID)
+	if err != nil {
+		return "", err
+	}
+
+	return e.waitForOutput(ctx, client, resp.TaskID)
+}
+
+// executeSetEnv sets an environment variable
+func (e *Executor) executeSetEnv(ctx context.Context, client *csclient.Client, beaconID string, action Action) (string, error) {
+	key, ok := action.Parameters["key"].(string)
+	if !ok {
+		return "", fmt.Errorf("key parameter required for setenv")
+	}
+	value, _ := action.Parameters["value"].(string) // optional
+
+	resp, err := client.SetEnv(ctx, beaconID, key, value)
+	if err != nil {
+		return "", err
+	}
+
+	return e.waitForOutput(ctx, client, resp.TaskID)
+}
+
+// executeExit tells the beacon to exit
+func (e *Executor) executeExit(ctx context.Context, client *csclient.Client, beaconID string) (string, error) {
+	resp, err := client.Exit(ctx, beaconID)
+	if err != nil {
+		return "", err
+	}
+
+	return e.waitForOutput(ctx, client, resp.TaskID)
+}
+
+// executeJobStop stops an active job
+func (e *Executor) executeJobStop(ctx context.Context, client *csclient.Client, beaconID string, action Action) (string, error) {
+	jidVal, ok := action.Parameters["jid"]
+	if !ok {
+		return "", fmt.Errorf("jid parameter required for job_stop")
+	}
+
+	var jid int
+	switch v := jidVal.(type) {
+	case float64:
+		jid = int(v)
+	case int:
+		jid = v
+	default:
+		return "", fmt.Errorf("jid parameter must be a number")
+	}
+
+	resp, err := client.JobStop(ctx, beaconID, jid)
 	if err != nil {
 		return "", err
 	}

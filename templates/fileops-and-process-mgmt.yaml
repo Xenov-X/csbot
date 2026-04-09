@@ -1,0 +1,160 @@
+name: File Operations & Process Management Test
+# Tests all file/directory and process management action types
+# Beacon ID omitted for interactive selection
+
+actions:
+  # -------------------------------------------------------
+  # File & Directory Operations
+  # -------------------------------------------------------
+
+  # 1. pwd - get current working directory
+  - name: get_cwd
+    type: pwd
+
+  # 2. ls - list current directory contents
+  - name: list_cwd
+    type: ls
+
+  # 3. drives - enumerate available drives
+  - name: list_drives
+    type: drives
+
+  # 4. mkdir - create a temp working directory
+  - name: create_test_dir
+    type: mkdir
+    parameters:
+      folder: C:\Temp\csbot_test
+
+  # 5. cd - change into the new directory
+  - name: change_to_test_dir
+    type: cd
+    parameters:
+      path: C:\Temp\csbot_test
+
+  # 6. pwd - confirm we moved
+  - name: confirm_cwd
+    type: pwd
+
+  # 7. shell - create test files to work with
+  - name: create_test_files
+    type: shell
+    parameters:
+      command: echo test_content > file1.txt && echo other_content > file2.txt
+
+  # 8. ls - list the new files
+  - name: list_test_dir
+    type: ls
+    parameters:
+      path: C:\Temp\csbot_test
+
+  # 9. cp - copy a file
+  - name: copy_file
+    type: cp
+    parameters:
+      src: C:\Temp\csbot_test\file1.txt
+      dst: C:\Temp\csbot_test\file1_copy.txt
+
+  # 10. mv - rename/move a file
+  - name: move_file
+    type: mv
+    parameters:
+      source: C:\Temp\csbot_test\file2.txt
+      destination: C:\Temp\csbot_test\file2_renamed.txt
+
+  # 11. ls - verify cp and mv results
+  - name: verify_file_ops
+    type: ls
+    parameters:
+      path: C:\Temp\csbot_test
+
+  # 12. timestomp - copy timestamps from one file to another
+  - name: timestomp_file
+    type: timestomp
+    parameters:
+      source: C:\Windows\System32\cmd.exe
+      destination: C:\Temp\csbot_test\file1.txt
+
+  # 13. rm - clean up test files
+  - name: remove_copy
+    type: rm
+    parameters:
+      path: C:\Temp\csbot_test\file1_copy.txt
+
+  # -------------------------------------------------------
+  # Process Management
+  # -------------------------------------------------------
+
+  # 14. ps - list running processes
+  - name: list_processes
+    type: ps
+
+  # 15. getprivs - enable all available privileges
+  - name: enable_privs
+    type: getprivs
+    conditions:
+      - source: beacon.isAdmin
+        operator: equals
+        value: "true"
+
+  # 16. setenv - set an environment variable
+  - name: set_env_var
+    type: setenv
+    parameters:
+      key: CSBOT_TEST
+      value: "hello_from_csbot"
+
+  # 17. shell - confirm the env var was set
+  - name: verify_env_var
+    type: shell
+    parameters:
+      command: echo %CSBOT_TEST%
+
+  # 18. shell - spawn a throwaway process we can kill
+  - name: spawn_notepad
+    type: shell
+    parameters:
+      command: start /b notepad.exe
+    on_success:
+      # small delay for process to start
+      - name: wait_for_notepad
+        type: sleep
+        parameters:
+          duration: "3s"
+
+  # 19. shell - find its PID so we can kill it
+  - name: find_notepad_pid
+    type: shell
+    parameters:
+      command: tasklist /fi "imagename eq notepad.exe" /fo csv /nh
+
+  # Note: kill requires a known PID. In a real workflow you would
+  # parse find_notepad_pid output or use a known PID. This example
+  # uses a placeholder - replace with an actual PID for live testing.
+  #
+  # - name: kill_notepad
+  #   type: kill
+  #   parameters:
+  #     pid: 9999
+
+  # 20. job_stop example (commented out - requires a known active JID)
+  #
+  # - name: stop_job
+  #   type: job_stop
+  #   parameters:
+  #     jid: 1
+
+  # -------------------------------------------------------
+  # Cleanup
+  # -------------------------------------------------------
+
+  # Return to original directory
+  - name: return_to_original
+    type: cd
+    parameters:
+      path: C:\
+
+  # Remove test directory
+  - name: cleanup_test_dir
+    type: rm
+    parameters:
+      path: C:\Temp\csbot_test

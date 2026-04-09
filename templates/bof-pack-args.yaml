@@ -1,0 +1,144 @@
+name: BOF Pack Argument Types Reference
+# Demonstrates every bof_pack argument type supported by csbot.
+#
+# bof_pack sends typed arguments to the Cobalt Strike API which handles
+# packing them into the binary format the BOF expects. This is the
+# recommended way to pass arguments to BOFs.
+#
+# Argument types fall into two categories:
+#   1. Native types  - sent directly to the API (string, wstring, int, short, binary)
+#   2. Meta-types    - resolved at runtime by csbot before sending (binarypath, binarylen)
+
+actions:
+
+  # -------------------------------------------------------------------
+  # Example 1: All native argument types
+  # -------------------------------------------------------------------
+  # This BOF receives one of each native type. Replace the BOF path
+  # and entrypoint with your own.
+  - name: native_types_demo
+    type: bof_pack
+    parameters:
+      bof: /opt/bofs/inject.o        # path to compiled BOF on disk
+      entrypoint: go                  # BOF entry function (default: go)
+      arguments:
+
+        # string - ANSI (narrow) string
+        # Use for typical C-style char* parameters
+        - type: string
+          value: "CORP\\svc_admin"
+
+        # wstring - wide (UTF-16) string
+        # Use for Windows LPCWSTR / wchar_t* parameters
+        - type: wstring
+          value: "C:\\Windows\\System32"
+
+        # int - 32-bit integer
+        # Use for DWORD, int, ULONG, PID values, etc.
+        - type: int
+          value: 4096
+
+        # short - 16-bit integer
+        # Use for WORD, short, port numbers, etc.
+        - type: short
+          value: 443
+
+        # binary - raw base64-encoded bytes
+        # Use when you already have the binary data encoded.
+        # The value is sent as-is to the API.
+        - type: binary
+          value: "AQIDBAUG"
+
+  # -------------------------------------------------------------------
+  # Example 2: binarypath - read a file at runtime
+  # -------------------------------------------------------------------
+  # binarypath is a csbot meta-type. At execution time it:
+  #   1. Reads the file at the given path
+  #   2. Base64-encodes the contents
+  #   3. Sends it as a binary argument to the API
+  #
+  # Useful for passing shellcode, DLLs, or other binary payloads
+  # without having to manually base64-encode them in the YAML.
+  - name: binarypath_demo
+    type: bof_pack
+    parameters:
+      bof: /opt/bofs/inject.o
+      entrypoint: go
+      arguments:
+
+        # The target process PID to inject into
+        - type: int
+          value: 1234
+
+        # Shellcode read from disk at runtime
+        - type: binarypath
+          value: /tmp/payload.bin
+
+  # -------------------------------------------------------------------
+  # Example 3: binarylen - get file size at runtime
+  # -------------------------------------------------------------------
+  # binarylen is a csbot meta-type. At execution time it:
+  #   1. Calls os.Stat on the file at the given path
+  #   2. Gets the file size in bytes
+  #   3. Sends it as an int argument to the API
+  #
+  # Many BOFs that accept binary blobs also need the blob's length
+  # as a separate integer argument. binarylen avoids hard-coding
+  # or manually calculating the size.
+  - name: binarylen_demo
+    type: bof_pack
+    parameters:
+      bof: /opt/bofs/inject.o
+      entrypoint: go
+      arguments:
+
+        # Target PID
+        - type: int
+          value: 1234
+
+        # Shellcode blob
+        - type: binarypath
+          value: /tmp/payload.bin
+
+        # Shellcode length - points to the SAME file as binarypath
+        - type: binarylen
+          value: /tmp/payload.bin
+
+  # -------------------------------------------------------------------
+  # Example 4: Realistic injection BOF
+  # -------------------------------------------------------------------
+  # A typical process injection BOF might expect:
+  #   go(char* shellcode, int shellcode_len, int target_pid, short flags)
+  #
+  # This shows how all the types compose together in practice.
+  - name: realistic_inject
+    type: bof_pack
+    parameters:
+      bof: /opt/bofs/inject.o
+      entrypoint: go
+      arguments:
+
+        # arg 0: shellcode blob (binary data from file)
+        - type: binarypath
+          value: /tmp/beacon_shellcode.bin
+
+        # arg 1: shellcode length (auto-calculated from same file)
+        - type: binarylen
+          value: /tmp/beacon_shellcode.bin
+
+        # arg 2: target PID to inject into
+        - type: int
+          value: 5678
+
+        # arg 3: injection flags (bitmask as short)
+        - type: short
+          value: 3
+
+    on_success:
+      - name: verify_inject
+        type: ps
+    on_failure:
+      - name: log_failure
+        type: shell
+        parameters:
+          command: echo "Injection failed"
