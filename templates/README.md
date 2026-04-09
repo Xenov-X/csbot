@@ -95,6 +95,19 @@ Classic privilege escalation example:
 - Conditionally runs exploit BOF
 - Demonstrates conditional logic
 
+### 13. fileops-and-process-mgmt.yaml
+Tests all file/directory and process management action types:
+- File ops: pwd, ls, drives, mkdir, cd, cp, mv, timestomp, rm
+- Process mgmt: ps, getprivs, setenv, kill (commented), job_stop (commented)
+- Full cleanup of test artifacts
+- Conditional getprivs based on beacon.isAdmin
+
+### 14. bof-pack-args.yaml
+Reference for all `bof_pack` argument types:
+- Native types: string, wstring, int, short, binary
+- Meta-types: binarypath (file read at runtime), binarylen (file size as int)
+- Realistic injection BOF example composing all types together
+
 ## Usage
 
 ```bash
@@ -127,16 +140,18 @@ Templates can be customized by:
 
 | Template | Parallel | Conditions | Branching | File Ops | Variables |
 |----------|----------|------------|-----------|----------|-----------|
-| privilege-escalation.yaml | ❌ | ✅ | ✅ | ❌ | ❌ |
-| lateral-movement.yaml | ❌ | ❌ | ✅ | ✅ | ❌ |
-| persistence.yaml | ❌ | ✅ | ✅ | ❌ | ❌ |
-| credential-harvesting.yaml | ❌ | ❌ | ✅ | ✅ | ❌ |
-| domain-recon.yaml | ❌ | ❌ | ❌ | ❌ | ❌ |
-| parallel-recon.yaml | ✅ | ❌ | ❌ | ❌ | ❌ |
-| workflow-complex.yaml | ❌ | ✅ | ✅ | ❌ | ❌ |
-| workflow-fileops.yaml | ❌ | ❌ | ✅ | ✅ | ❌ |
-| workflow-recon.yaml | ❌ | ✅ | ✅ | ❌ | ❌ |
-| example-seimpersonate.yaml | ❌ | ✅ | ✅ | ❌ | ❌ |
+| privilege-escalation.yaml | - | Yes | Yes | - | - |
+| lateral-movement.yaml | - | - | Yes | Yes | - |
+| persistence.yaml | - | Yes | Yes | - | - |
+| credential-harvesting.yaml | - | - | Yes | Yes | - |
+| domain-recon.yaml | - | - | - | - | - |
+| parallel-recon.yaml | Yes | - | - | - | - |
+| workflow-complex.yaml | - | Yes | Yes | - | - |
+| workflow-fileops.yaml | - | - | Yes | Yes | - |
+| workflow-recon.yaml | - | Yes | Yes | - | - |
+| example-seimpersonate.yaml | - | Yes | Yes | - | - |
+| fileops-and-process-mgmt.yaml | - | Yes | - | Yes | - |
+| bof-pack-args.yaml | - | - | Yes | - | - |
 
 ## Security Note
 

@@ -200,6 +200,33 @@ actions:
 | `bof_string` | Execute BOF (string args) | `bof`, `entrypoint`, `arguments` |
 | `bof_pack` | Execute BOF (typed args) | `bof`, `entrypoint`, `arguments` |
 | `bof_packed` | Execute BOF (pre-packed) | `bof`, `entrypoint`, `arguments` |
+| `cd` | Change working directory | `path` |
+| `ls` | List directory contents | `path` (optional) |
+| `pwd` | Print working directory | None |
+| `mkdir` | Create directory | `folder` |
+| `cp` | Copy file | `src`, `dst` |
+| `mv` | Move/rename file | `source`, `destination` |
+| `rm` | Remove file or folder | `path` |
+| `drives` | List available drives | None |
+| `timestomp` | Copy file timestamps | `source`, `destination` |
+| `ps` | List processes | None |
+| `kill` | Terminate process | `pid` |
+| `getprivs` | Enable all privileges | None |
+| `setenv` | Set environment variable | `key`, `value` (optional) |
+| `exit` | Exit beacon | None |
+| `job_stop` | Stop active job | `jid` |
+
+### BOF Argument Types (`bof_pack`)
+
+| Type | Description | Value |
+|------|-------------|-------|
+| `string` | ANSI string | String literal |
+| `wstring` | Wide (UTF-16) string | String literal |
+| `int` | 32-bit integer | Number |
+| `short` | 16-bit integer | Number |
+| `binary` | Raw binary data | Base64-encoded bytes |
+| `binarypath` | Binary from file | File path (read at runtime) |
+| `binarylen` | File size as int | File path (size calculated at runtime) |
 
 ## Beacon Metadata Fields
 
