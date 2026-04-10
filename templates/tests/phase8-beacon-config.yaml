@@ -1,0 +1,194 @@
+name: "Phase 8: Beacon Configuration Test"
+# Beacon ID omitted - will prompt for interactive selection
+#
+# Tests: beacon_info, set_sleep, set_note, beacon_gate,
+#        blockdlls, spawnto, ppid, dns_mode, syscall_method,
+#        list_jobs, clear_queue, checkin
+# Prerequisites: Active beacon
+# Risk: MEDIUM - modifies beacon configuration (all reversible)
+#
+# IMPORTANT: This workflow changes beacon settings. It attempts to
+#            restore defaults at the end, but verify manually if
+#            the workflow is interrupted.
+
+actions:
+  # -------------------------------------------------------
+  # Beacon Information (read-only)
+  # -------------------------------------------------------
+
+  - name: get_beacon_info
+    type: beacon_info
+
+  - name: list_active_jobs
+    type: list_jobs
+
+  # -------------------------------------------------------
+  # Sleep & Jitter
+  # -------------------------------------------------------
+
+  # Save original sleep by reading beacon info first
+  # Set a fast callback for testing
+  - name: set_sleep_fast
+    type: set_sleep
+    parameters:
+      sleep: 1
+      jitter: 0
+
+  - name: pause_for_checkin
+    type: sleep
+    parameters:
+      duration: "3s"
+
+  # Verify the beacon checks in faster
+  - name: force_checkin
+    type: checkin
+
+  - name: pause_after_checkin
+    type: sleep
+    parameters:
+      duration: "2s"
+
+  # -------------------------------------------------------
+  # Beacon Notes
+  # -------------------------------------------------------
+
+  - name: set_note_test
+    type: set_note
+    parameters:
+      note: "csbot-phase8-test"
+
+  - name: verify_note
+    type: beacon_info
+
+  # Clear the note
+  - name: clear_note
+    type: set_note
+    parameters:
+      note: ""
+
+  # -------------------------------------------------------
+  # Beacon Gate (evasion feature)
+  # -------------------------------------------------------
+
+  - name: enable_gate
+    type: enable_beacon_gate
+
+  - name: pause_after_gate_enable
+    type: sleep
+    parameters:
+      duration: "2s"
+
+  - name: disable_gate
+    type: disable_beacon_gate
+
+  # -------------------------------------------------------
+  # Block DLLs (prevent non-Microsoft DLLs in child processes)
+  # -------------------------------------------------------
+
+  - name: enable_blockdlls
+    type: enable_blockdlls
+
+  - name: pause_after_blockdlls
+    type: sleep
+    parameters:
+      duration: "2s"
+
+  - name: disable_blockdlls
+    type: disable_blockdlls
+
+  # -------------------------------------------------------
+  # SpawnTo (child process for post-ex)
+  # -------------------------------------------------------
+
+  - name: set_spawnto_x64
+    type: set_spawnto
+    parameters:
+      arch: "x64"
+      path: "C:\\Windows\\System32\\svchost.exe"
+
+  - name: verify_spawnto
+    type: beacon_info
+
+  # Reset spawnto to default
+  - name: unset_spawnto
+    type: unset_spawnto
+
+  # -------------------------------------------------------
+  # Parent PID Spoofing
+  # -------------------------------------------------------
+
+  # Set PPID to explorer.exe (common legitimate parent)
+  # Find explorer PID first
+  - name: find_explorer
+    type: shell
+    parameters:
+      command: "tasklist /fi \"imagename eq explorer.exe\" /fo csv /nh"
+
+  # Note: Replace with actual explorer PID from find_explorer output
+  # Uncomment with actual PID:
+  #
+  # - name: set_ppid_test
+  #   type: set_ppid
+  #   parameters:
+  #     ppid: <REPLACE_WITH_EXPLORER_PID>
+  #
+  # - name: verify_ppid
+  #   type: beacon_info
+  #
+  # - name: unset_ppid_test
+  #   type: unset_ppid
+
+  # -------------------------------------------------------
+  # DNS Mode (for DNS beacons)
+  # -------------------------------------------------------
+
+  # Only relevant if beacon is using a DNS listener.
+  # Uncomment to test:
+  #
+  # - name: set_dns_mode_test
+  #   type: set_dns_mode
+  #   parameters:
+  #     mode: "dns-txt"
+
+  # -------------------------------------------------------
+  # Syscall Method
+  # -------------------------------------------------------
+
+  - name: set_syscall_direct
+    type: set_syscall_method
+    parameters:
+      method: "Direct"
+
+  - name: pause_after_syscall
+    type: sleep
+    parameters:
+      duration: "2s"
+
+  # Reset to default
+  - name: set_syscall_none
+    type: set_syscall_method
+    parameters:
+      method: "None"
+
+  # -------------------------------------------------------
+  # Queue Management
+  # -------------------------------------------------------
+
+  # Clear any pending commands
+  - name: clear_queue_test
+    type: clear_queue
+
+  # -------------------------------------------------------
+  # Restore Defaults
+  # -------------------------------------------------------
+
+  # Set sleep back to a reasonable default
+  - name: restore_sleep
+    type: set_sleep
+    parameters:
+      sleep: 60
+      jitter: 25
+
+  # Final beacon info to verify state
+  - name: final_beacon_info
+    type: beacon_info

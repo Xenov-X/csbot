@@ -1,0 +1,150 @@
+name: "Phase 1: Server-Level Operations Test"
+# No beacon_id required - all actions are server-level
+#
+# Tests: listener CRUD, payload generation, server config queries
+# Prerequisites: Cobalt Strike team server running with REST API enabled
+# Expected: All actions succeed with JSON responses
+
+actions:
+  # -------------------------------------------------------
+  # Server Configuration Queries (read-only, safe to run first)
+  # -------------------------------------------------------
+
+  - name: get_teamserver_ip
+    type: get_teamserver_ip
+
+  - name: get_system_info
+    type: get_system_info
+
+  - name: get_kill_date
+    type: get_kill_date
+
+  - name: get_c2_profile
+    type: get_c2_profile
+
+  # -------------------------------------------------------
+  # Listener Management - Create
+  # -------------------------------------------------------
+
+  # HTTP listener
+  - name: create_http_listener
+    type: add_http_listener
+    parameters:
+      name: "test-http"
+      color: "DEFAULT"
+      hosts: ["0.0.0.0"]
+      host: "0.0.0.0"
+      httpPort: 8080
+      ignoreProxySettings: false
+
+  # SMB listener
+  - name: create_smb_listener
+    type: add_smb_listener
+    parameters:
+      name: "test-smb"
+      color: "DEFAULT"
+      pipename: "msagent_test"
+
+  # TCP listener
+  - name: create_tcp_listener
+    type: add_tcp_listener
+    parameters:
+      name: "test-tcp"
+      color: "DEFAULT"
+      port: 4444
+      localHostOnly: false
+
+  # -------------------------------------------------------
+  # Listener Management - List & Get
+  # -------------------------------------------------------
+
+  - name: list_all_listeners
+    type: list_listeners
+
+  - name: get_http_listener
+    type: get_listener
+    parameters:
+      name: "test-http"
+
+  - name: get_smb_listener
+    type: get_listener
+    parameters:
+      name: "test-smb"
+
+  # -------------------------------------------------------
+  # Listener Management - Update
+  # -------------------------------------------------------
+
+  - name: update_http_listener
+    type: update_http_listener
+    parameters:
+      name: "test-http"
+      color: "DEFAULT"
+      hosts: ["0.0.0.0"]
+      host: "0.0.0.0"
+      httpPort: 8081
+      ignoreProxySettings: false
+
+  # Verify the update took effect
+  - name: verify_http_update
+    type: get_listener
+    parameters:
+      name: "test-http"
+
+  # -------------------------------------------------------
+  # Payload Generation
+  # -------------------------------------------------------
+
+  - name: generate_stageless
+    type: generate_stageless_payload
+    parameters:
+      listenerName: "test-http"
+      architecture: "x64"
+      exitFunction: "Process"
+      systemCallMethod: "None"
+      output: "Raw"
+      fileName: "test_beacon.bin"
+      useListenerGuardRails: true
+
+  - name: list_artifacts
+    type: list_artifacts
+
+  # Note: generate_stager_payload and download_payload depend on
+  # specific listener types supporting stagers. Uncomment if your
+  # HTTP listener is configured for staged payloads.
+  #
+  # - name: generate_stager
+  #   type: generate_stager_payload
+  #   parameters:
+  #     listenerName: "test-http"
+  #     architecture: "x64"
+  #     format: "exe"
+  #     fileName: "test_stager.exe"
+  #
+  # - name: download_generated_payload
+  #   type: download_payload
+  #   parameters:
+  #     file_name: "test_beacon.exe"
+
+  # -------------------------------------------------------
+  # Listener Management - Cleanup
+  # -------------------------------------------------------
+
+  - name: delete_tcp_listener
+    type: delete_listener
+    parameters:
+      name: "test-tcp"
+
+  - name: delete_smb_listener
+    type: delete_listener
+    parameters:
+      name: "test-smb"
+
+  - name: delete_http_listener
+    type: delete_listener
+    parameters:
+      name: "test-http"
+
+  # Verify cleanup
+  - name: final_listener_list
+    type: list_listeners

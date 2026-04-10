@@ -1,0 +1,151 @@
+name: "Phase 4: Network Reconnaissance Test"
+# Beacon ID omitted - will prompt for interactive selection
+#
+# Tests: net_* commands (domain, view, user, share, sessions, logons,
+#        localgroup, group, domain_trusts, domain_controllers, dclist,
+#        computers, time), portscan, registry queries
+# Prerequisites: Active beacon on a domain-joined Windows target
+# Risk: LOW - all read-only reconnaissance operations
+
+actions:
+  # -------------------------------------------------------
+  # Domain Information
+  # -------------------------------------------------------
+
+  - name: net_domain
+    type: net_domain
+
+  - name: net_domain_trusts
+    type: net_domain_trusts
+
+  - name: net_domain_controllers
+    type: net_domain_controllers
+
+  - name: net_dclist
+    type: net_dclist
+
+  - name: net_computers
+    type: net_computers
+
+  # -------------------------------------------------------
+  # Network Enumeration
+  # -------------------------------------------------------
+
+  - name: net_view
+    type: net_view
+
+  - name: net_time
+    type: net_time
+
+  # -------------------------------------------------------
+  # User & Group Enumeration
+  # -------------------------------------------------------
+
+  - name: net_user
+    type: net_user
+
+  # Enumerate a specific user (self)
+  - name: net_user_detail
+    type: net_user_detail
+
+  - name: net_localgroup
+    type: net_localgroup
+
+  # Enumerate Administrators local group
+  - name: net_localgroup_admins
+    type: net_localgroup
+    parameters:
+      group_name: "Administrators"
+
+  - name: net_group
+    type: net_group
+
+  # Enumerate Domain Admins (if domain-joined)
+  - name: net_group_domain_admins
+    type: net_group
+    parameters:
+      group_name: "Domain Admins"
+
+  # -------------------------------------------------------
+  # Share & Session Enumeration
+  # -------------------------------------------------------
+
+  - name: net_share
+    type: net_share
+
+  - name: net_sessions
+    type: net_sessions
+
+  - name: net_logons
+    type: net_logons
+
+  # -------------------------------------------------------
+  # Port Scanning
+  # -------------------------------------------------------
+
+  # Scan localhost to verify portscan works without network impact
+  - name: portscan_localhost
+    type: portscan
+    parameters:
+      targets: "127.0.0.1"
+      ports: "445,3389,5985"
+      method: "none"
+      max_connections: 5
+
+  # Scan a small subnet (adjust for your lab network)
+  # Uncomment with your lab's subnet:
+  #
+  # - name: portscan_subnet
+  #   type: portscan
+  #   parameters:
+  #     targets: "10.0.0.0/28"
+  #     ports: "22,80,135,445,3389"
+  #     method: "arp"
+  #     max_connections: 25
+
+  # -------------------------------------------------------
+  # Registry Queries
+  # -------------------------------------------------------
+
+  - name: reg_query_run
+    type: reg_query
+    parameters:
+      arch: "x64"
+      path: "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"
+
+  - name: reg_queryv_uac
+    type: reg_queryv
+    parameters:
+      arch: "x64"
+      path: "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System"
+      subkey: "EnableLUA"
+
+  # -------------------------------------------------------
+  # Remote Enumeration (requires a second target)
+  # Uncomment with a valid target hostname/IP:
+  # -------------------------------------------------------
+
+  # - name: net_view_target
+  #   type: net_view
+  #   parameters:
+  #     domain: "corp.local"
+  #
+  # - name: net_share_target
+  #   type: net_share
+  #   parameters:
+  #     target: "DC01"
+  #
+  # - name: net_sessions_target
+  #   type: net_sessions
+  #   parameters:
+  #     target: "DC01"
+  #
+  # - name: net_user_target
+  #   type: net_user
+  #   parameters:
+  #     target: "DC01"
+  #
+  # - name: net_time_target
+  #   type: net_time
+  #   parameters:
+  #     target: "DC01"

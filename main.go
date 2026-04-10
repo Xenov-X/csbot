@@ -193,19 +193,23 @@ func main() {
 		os.Exit(0)
 	}
 
-	// If no beacon ID specified in workflow, prompt user to select
+	// If no beacon ID specified in workflow, check if one is needed
 	if wf.BeaconID == "" {
-		log.Info("No beacon ID specified in workflow, prompting for selection...")
-		beaconID, err := selector.SelectBeacon(ctx, client)
-		if err != nil {
-			log.Error("Beacon selection failed: %v", err)
-			os.Exit(1)
-		}
-		wf.BeaconID = beaconID
+		if workflow.WorkflowRequiresBeacon(wf) {
+			log.Info("No beacon ID specified in workflow, prompting for selection...")
+			beaconID, err := selector.SelectBeacon(ctx, client)
+			if err != nil {
+				log.Error("Beacon selection failed: %v", err)
+				os.Exit(1)
+			}
+			wf.BeaconID = beaconID
 
-		// Display beacon details
-		if err := selector.DisplayBeaconDetails(ctx, client, beaconID); err != nil {
-			log.Warn("Could not display beacon details: %v", err)
+			// Display beacon details
+			if err := selector.DisplayBeaconDetails(ctx, client, beaconID); err != nil {
+				log.Warn("Could not display beacon details: %v", err)
+			}
+		} else {
+			log.Info("Workflow contains only server-level actions, no beacon required")
 		}
 	} else {
 		log.Info("Using beacon ID from workflow: %s", wf.BeaconID)

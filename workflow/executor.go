@@ -118,18 +118,24 @@ func (e *Executor) Execute(ctx context.Context, wf *Workflow, username, password
 	}
 	e.logInfo("Authentication successful")
 
-	// Fetch beacon metadata
-	e.logInfo("Fetching beacon metadata for %s...", wf.BeaconID)
-	beacon, err := client.GetBeacon(ctx, wf.BeaconID)
-	if err != nil {
-		return fmt.Errorf("failed to fetch beacon metadata: %w", err)
+	// Fetch beacon metadata only if workflow requires a beacon
+	if wf.BeaconID != "" {
+		e.logInfo("Fetching beacon metadata for %s...", wf.BeaconID)
+		beacon, err := client.GetBeacon(ctx, wf.BeaconID)
+		if err != nil {
+			return fmt.Errorf("failed to fetch beacon metadata: %w", err)
+		}
+		e.beacon = beacon
+		e.storeBeaconMetadata()
+	} else {
+		e.logInfo("No beacon ID specified - server-level workflow")
 	}
-	e.beacon = beacon
-	e.storeBeaconMetadata()
 
 	// Execute workflow
 	e.logInfo("Starting workflow: %s", wf.Name)
-	e.logInfo("Target beacon: %s", wf.BeaconID)
+	if wf.BeaconID != "" {
+		e.logInfo("Target beacon: %s", wf.BeaconID)
+	}
 
 	if wf.Parallel {
 		e.logInfo("Parallel execution enabled")
@@ -273,6 +279,67 @@ func (e *Executor) executeAction(ctx context.Context, client *csclient.Client, b
 	action = e.interpolateAction(action)
 
 	switch action.Type {
+	// --- Server-Level Operations (no beacon required) ---
+	case "list_listeners":
+		return e.executeListListeners(ctx, client)
+	case "get_listener":
+		return e.executeGetListener(ctx, client, action)
+	case "delete_listener":
+		return e.executeDeleteListener(ctx, client, action)
+	case "add_http_listener":
+		return e.executeAddListener(ctx, client, action, "http")
+	case "add_https_listener":
+		return e.executeAddListener(ctx, client, action, "https")
+	case "add_dns_listener":
+		return e.executeAddListener(ctx, client, action, "dns")
+	case "add_tcp_listener":
+		return e.executeAddListener(ctx, client, action, "tcp")
+	case "add_smb_listener":
+		return e.executeAddListener(ctx, client, action, "smb")
+	case "add_externalc2_listener":
+		return e.executeAddListener(ctx, client, action, "externalc2")
+	case "add_udc2_listener":
+		return e.executeAddListener(ctx, client, action, "udc2")
+	case "add_foreign_http_listener":
+		return e.executeAddListener(ctx, client, action, "foreign_http")
+	case "add_foreign_https_listener":
+		return e.executeAddListener(ctx, client, action, "foreign_https")
+	case "update_http_listener":
+		return e.executeUpdateListener(ctx, client, action, "http")
+	case "update_https_listener":
+		return e.executeUpdateListener(ctx, client, action, "https")
+	case "update_dns_listener":
+		return e.executeUpdateListener(ctx, client, action, "dns")
+	case "update_tcp_listener":
+		return e.executeUpdateListener(ctx, client, action, "tcp")
+	case "update_smb_listener":
+		return e.executeUpdateListener(ctx, client, action, "smb")
+	case "update_externalc2_listener":
+		return e.executeUpdateListener(ctx, client, action, "externalc2")
+	case "update_udc2_listener":
+		return e.executeUpdateListener(ctx, client, action, "udc2")
+	case "update_foreign_http_listener":
+		return e.executeUpdateListener(ctx, client, action, "foreign_http")
+	case "update_foreign_https_listener":
+		return e.executeUpdateListener(ctx, client, action, "foreign_https")
+	case "list_artifacts":
+		return e.executeListArtifacts(ctx, client)
+	case "generate_stageless_payload":
+		return e.executeGenerateStagelessPayload(ctx, client, action)
+	case "generate_stager_payload":
+		return e.executeGenerateStagerPayload(ctx, client, action)
+	case "download_payload":
+		return e.executeDownloadPayload(ctx, client, action)
+	case "get_kill_date":
+		return e.executeGetKillDate(ctx, client)
+	case "get_c2_profile":
+		return e.executeGetC2Profile(ctx, client)
+	case "get_system_info":
+		return e.executeGetSystemInfo(ctx, client)
+	case "get_teamserver_ip":
+		return e.executeGetTeamserverIp(ctx, client)
+
+	// --- Beacon-Targeted Operations ---
 	case "bof_string":
 		return e.executeBOFString(ctx, client, beaconID, action)
 	case "bof_packed":
@@ -329,6 +396,225 @@ func (e *Executor) executeAction(ctx context.Context, client *csclient.Client, b
 		return e.executeExit(ctx, client, beaconID)
 	case "job_stop":
 		return e.executeJobStop(ctx, client, beaconID, action)
+
+	// --- Credential & Token Operations ---
+	case "steal_token":
+		return e.executeStealToken(ctx, client, beaconID, action)
+	case "make_token":
+		return e.executeMakeToken(ctx, client, beaconID, action)
+	case "make_token_upn":
+		return e.executeMakeTokenUpn(ctx, client, beaconID, action)
+	case "rev2self":
+		return e.executeRev2Self(ctx, client, beaconID)
+	case "kerberos_ticket_use":
+		return e.executeKerberosTicketUse(ctx, client, beaconID, action)
+	case "kerberos_ticket_purge":
+		return e.executeKerberosTicketPurge(ctx, client, beaconID)
+	case "token_store_steal":
+		return e.executeTokenStoreSteal(ctx, client, beaconID, action)
+	case "token_store_steal_use":
+		return e.executeTokenStoreStealAndUse(ctx, client, beaconID, action)
+	case "token_store_use":
+		return e.executeTokenStoreUse(ctx, client, beaconID, action)
+	case "token_store_remove":
+		return e.executeTokenStoreRemove(ctx, client, beaconID, action)
+	case "token_store_remove_all":
+		return e.executeTokenStoreRemoveAll(ctx, client, beaconID)
+	case "token_store_list":
+		return e.executeTokenStoreList(ctx, client, beaconID)
+	case "hashdump":
+		return e.executeHashdump(ctx, client, beaconID)
+	case "logon_passwords":
+		return e.executeLogonPasswords(ctx, client, beaconID)
+	case "mimikatz":
+		return e.executeMimikatz(ctx, client, beaconID, action)
+	case "dcsync":
+		return e.executeDcSync(ctx, client, beaconID, action)
+	case "chromedump":
+		return e.executeChromeDump(ctx, client, beaconID)
+
+	// --- Pivoting & Lateral Movement ---
+	case "link_smb":
+		return e.executeLinkSmb(ctx, client, beaconID, action)
+	case "link_tcp":
+		return e.executeLinkTcp(ctx, client, beaconID, action)
+	case "unlink":
+		return e.executeUnlink(ctx, client, beaconID, action)
+	case "ssh":
+		return e.executeSsh(ctx, client, beaconID, action)
+	case "ssh_key":
+		return e.executeSshKey(ctx, client, beaconID, action)
+	case "remote_exec":
+		return e.executeRemoteExec(ctx, client, beaconID, action)
+	case "jump":
+		return e.executeJump(ctx, client, beaconID, action)
+
+	// --- Tunneling ---
+	case "socks4_start":
+		return e.executeSocks4Start(ctx, client, beaconID, action)
+	case "socks5_start":
+		return e.executeSocks5Start(ctx, client, beaconID, action)
+	case "socks_stop_all":
+		return e.executeSocksStopAll(ctx, client, beaconID, action)
+	case "socks_stop":
+		return e.executeSocksStop(ctx, client, beaconID, action)
+	case "rportfwd_start":
+		return e.executeRportfwdStart(ctx, client, beaconID, action)
+	case "rportfwd_stop":
+		return e.executeRportfwdStop(ctx, client, beaconID, action)
+	case "browser_pivot_start":
+		return e.executeBrowserPivotStart(ctx, client, beaconID, action)
+	case "browser_pivot_stop":
+		return e.executeBrowserPivotStop(ctx, client, beaconID, action)
+
+	// --- Network Recon ---
+	case "net_domain":
+		return e.executeNetDomain(ctx, client, beaconID)
+	case "net_view":
+		return e.executeNetView(ctx, client, beaconID, action)
+	case "net_user":
+		return e.executeNetUser(ctx, client, beaconID, action)
+	case "net_user_detail":
+		return e.executeNetUserDetail(ctx, client, beaconID, action)
+	case "net_time":
+		return e.executeNetTime(ctx, client, beaconID, action)
+	case "net_share":
+		return e.executeNetShare(ctx, client, beaconID, action)
+	case "net_sessions":
+		return e.executeNetSessions(ctx, client, beaconID, action)
+	case "net_logons":
+		return e.executeNetLogons(ctx, client, beaconID, action)
+	case "net_localgroup":
+		return e.executeNetLocalGroup(ctx, client, beaconID, action)
+	case "net_group":
+		return e.executeNetGroup(ctx, client, beaconID, action)
+	case "net_domain_trusts":
+		return e.executeNetDomainTrusts(ctx, client, beaconID, action)
+	case "net_domain_controllers":
+		return e.executeNetDomainControllers(ctx, client, beaconID, action)
+	case "net_dclist":
+		return e.executeNetDcList(ctx, client, beaconID, action)
+	case "net_computers":
+		return e.executeNetComputers(ctx, client, beaconID, action)
+	case "portscan":
+		return e.executePortScan(ctx, client, beaconID, action)
+
+	// --- Capture Operations ---
+	case "keylogger":
+		return e.executeKeylogger(ctx, client, beaconID)
+	case "screenwatch":
+		return e.executeScreenwatch(ctx, client, beaconID)
+	case "printscreen":
+		return e.executePrintscreen(ctx, client, beaconID)
+	case "clipboard":
+		return e.executeClipboard(ctx, client, beaconID)
+	case "cancel_download":
+		return e.executeCancelDownload(ctx, client, beaconID, action)
+
+	// --- Command Execution Variants ---
+	case "run":
+		return e.executeRun(ctx, client, beaconID, action)
+	case "runas":
+		return e.executeRunAs(ctx, client, beaconID, action)
+	case "run_under":
+		return e.executeRunUnder(ctx, client, beaconID, action)
+	case "run_no_output":
+		return e.executeRunNoOutput(ctx, client, beaconID, action)
+
+	// --- Privilege Elevation ---
+	case "elevate_command":
+		return e.executeElevateCommand(ctx, client, beaconID, action)
+	case "elevate_beacon":
+		return e.executeElevateBeacon(ctx, client, beaconID, action)
+
+	// --- Beacon/Shellcode Spawn & Inject ---
+	case "spawn_beacon":
+		return e.executeSpawnBeacon(ctx, client, beaconID, action)
+	case "spawn_beacon_as_user":
+		return e.executeSpawnBeaconAsUser(ctx, client, beaconID, action)
+	case "spawn_beacon_under":
+		return e.executeSpawnBeaconUnder(ctx, client, beaconID, action)
+	case "inject_beacon":
+		return e.executeInjectBeacon(ctx, client, beaconID, action)
+	case "spawn_shellcode":
+		return e.executeSpawnShellcode(ctx, client, beaconID, action)
+	case "inject_shellcode":
+		return e.executeInjectShellcode(ctx, client, beaconID, action)
+
+	// --- PowerShell & .NET ---
+	case "powershell_import":
+		return e.executePowerShellImport(ctx, client, beaconID, action)
+	case "powerpick":
+		return e.executePowerPick(ctx, client, beaconID, action)
+	case "psinject":
+		return e.executePsInject(ctx, client, beaconID, action)
+	case "execute_assembly":
+		return e.executeExecuteAssembly(ctx, client, beaconID, action)
+
+	// --- Pass-the-Hash ---
+	case "spawn_pth":
+		return e.executeSpawnPth(ctx, client, beaconID, action)
+	case "inject_pth":
+		return e.executeInjectPth(ctx, client, beaconID, action)
+
+	// --- DLL Operations ---
+	case "inject_dll":
+		return e.executeInjectDll(ctx, client, beaconID, action)
+	case "inject_load_dll":
+		return e.executeInjectLoadDll(ctx, client, beaconID, action)
+
+	// --- PostEx DLL ---
+	case "spawn_postex_dll":
+		return e.executeSpawnPostExDll(ctx, client, beaconID, action)
+	case "inject_postex_dll":
+		return e.executeInjectPostExDll(ctx, client, beaconID, action)
+
+	// --- Registry ---
+	case "reg_query":
+		return e.executeRegQuery(ctx, client, beaconID, action)
+	case "reg_queryv":
+		return e.executeRegQueryValue(ctx, client, beaconID, action)
+
+	// --- Beacon Configuration ---
+	case "beacon_info":
+		return e.executeBeaconInfo(ctx, client, beaconID)
+	case "set_sleep":
+		return e.executeSetSleep(ctx, client, beaconID, action)
+	case "set_note":
+		return e.executeSetNote(ctx, client, beaconID, action)
+	case "enable_beacon_gate":
+		return e.executeEnableBeaconGate(ctx, client, beaconID)
+	case "disable_beacon_gate":
+		return e.executeDisableBeaconGate(ctx, client, beaconID)
+	case "enable_blockdlls":
+		return e.executeEnableBlockDlls(ctx, client, beaconID)
+	case "disable_blockdlls":
+		return e.executeDisableBlockDlls(ctx, client, beaconID)
+	case "set_spawnto":
+		return e.executeSetSpawnto(ctx, client, beaconID, action)
+	case "unset_spawnto":
+		return e.executeUnsetSpawnto(ctx, client, beaconID)
+	case "set_ppid":
+		return e.executeSetPpid(ctx, client, beaconID, action)
+	case "unset_ppid":
+		return e.executeUnsetPpid(ctx, client, beaconID)
+	case "set_dns_mode":
+		return e.executeSetDnsMode(ctx, client, beaconID, action)
+	case "set_syscall_method":
+		return e.executeSetSyscallMethod(ctx, client, beaconID, action)
+
+	// --- Beacon Management ---
+	case "delete_beacon":
+		return e.executeDeleteBeacon(ctx, client, beaconID)
+	case "clear_queue":
+		return e.executeClearQueue(ctx, client, beaconID)
+	case "checkin":
+		return e.executeCheckin(ctx, client, beaconID)
+	case "console_command":
+		return e.executeConsoleCommand(ctx, client, beaconID, action)
+	case "list_jobs":
+		return e.executeListJobs(ctx, client, beaconID)
+
 	default:
 		return "", fmt.Errorf("unknown action type: %s", action.Type)
 	}

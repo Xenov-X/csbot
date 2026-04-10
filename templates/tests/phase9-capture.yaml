@@ -1,0 +1,114 @@
+name: "Phase 9: Capture Operations Test"
+# Beacon ID omitted - will prompt for interactive selection
+#
+# Tests: keylogger, screenwatch, printscreen, clipboard,
+#        screenshot, cancel_download, delete_beacon
+# Prerequisites: Active beacon (preferably with a user session
+#                for keylogger/clipboard to capture data)
+# Risk: MEDIUM - starts background capture jobs, final action
+#        deletes the beacon (commented out by default)
+#
+# NOTE: keylogger and screenwatch are long-running jobs. They
+#       are started, verified via list_jobs, then stopped.
+
+actions:
+  # -------------------------------------------------------
+  # Screenshot Variants
+  # -------------------------------------------------------
+
+  # Standard screenshot (single capture)
+  - name: take_screenshot
+    type: screenshot
+
+  # printscreen - uses PrintScreen simulation
+  - name: printscreen_test
+    type: printscreen
+
+  # -------------------------------------------------------
+  # Clipboard Capture
+  # -------------------------------------------------------
+
+  - name: clipboard_test
+    type: clipboard
+
+  # -------------------------------------------------------
+  # Keylogger (long-running job)
+  # -------------------------------------------------------
+
+  - name: start_keylogger
+    type: keylogger
+
+  - name: pause_for_keylogger
+    type: sleep
+    parameters:
+      duration: "5s"
+
+  # Check that the keylogger is running as a job
+  - name: list_jobs_keylogger
+    type: list_jobs
+
+  # Stop the keylogger (need JID from list_jobs)
+  # Note: In a real test, parse list_jobs output for JID.
+  # Uncomment with actual JID:
+  #
+  # - name: stop_keylogger
+  #   type: job_stop
+  #   parameters:
+  #     jid: <REPLACE_WITH_JID>
+
+  # -------------------------------------------------------
+  # Screen Watch (long-running job)
+  # -------------------------------------------------------
+
+  - name: start_screenwatch
+    type: screenwatch
+
+  - name: pause_for_screenwatch
+    type: sleep
+    parameters:
+      duration: "5s"
+
+  # Check that screenwatch is running
+  - name: list_jobs_screenwatch
+    type: list_jobs
+
+  # Stop screenwatch (need JID from list_jobs)
+  # Uncomment with actual JID:
+  #
+  # - name: stop_screenwatch
+  #   type: job_stop
+  #   parameters:
+  #     jid: <REPLACE_WITH_JID>
+
+  # -------------------------------------------------------
+  # Download Cancellation
+  # -------------------------------------------------------
+
+  # Start a download, then cancel it to test cancel_download
+  # Uncomment to test:
+  #
+  # - name: start_large_download
+  #   type: download
+  #   parameters:
+  #     remote_path: "C:\\Windows\\System32\\ntoskrnl.exe"
+  #
+  # - name: cancel_large_download
+  #   type: cancel_download
+  #   parameters:
+  #     file: "C:\\Windows\\System32\\ntoskrnl.exe"
+
+  # -------------------------------------------------------
+  # Beacon Lifecycle (DESTRUCTIVE - commented out)
+  # -------------------------------------------------------
+
+  # exit - tells the beacon to exit (kills the implant)
+  # WARNING: This terminates the beacon permanently!
+  #
+  # - name: exit_beacon
+  #   type: exit
+
+  # delete_beacon - removes beacon from team server
+  # WARNING: This removes the beacon record permanently!
+  #
+  # - name: delete_beacon_test
+  #   type: delete_beacon

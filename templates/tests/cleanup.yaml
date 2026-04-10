@@ -1,0 +1,16 @@
+name: "Cleanup Phase 1 Listeners"
+actions:
+  - name: delete_http
+    type: delete_listener
+    parameters:
+      name: "test-http"
+  - name: delete_smb
+    type: delete_listener
+    parameters:
+      name: "test-smb"
+  - name: delete_tcp
+    type: delete_listener
+    parameters:
+      name: "test-tcp"
+  - name: verify
+    type: list_listeners

@@ -1,0 +1,174 @@
+name: "Phase 6: Execution Variants Test"
+# Beacon ID omitted - will prompt for interactive selection
+#
+# Tests: run, run_no_output, run_as, run_under, powershell_import,
+#        powerpick, psinject, execute_assembly, console_command,
+#        BOF variants (bof_string, bof_packed, bof_pack, bof_pack_custom)
+# Prerequisites: Active beacon on a Windows target
+# Risk: MEDIUM - executes commands, may spawn processes
+#
+# NOTE: BOF tests require actual BOF files on the operator machine.
+#       Assembly tests require a .NET assembly. Paths use placeholders.
+
+actions:
+  # -------------------------------------------------------
+  # Basic Execution Variants
+  # -------------------------------------------------------
+
+  # run - execute a program with output
+  - name: run_cmd
+    type: run
+    parameters:
+      program: "ipconfig"
+      args: "/all"
+
+  # run_no_output - fire and forget
+  - name: run_no_output_test
+    type: run_no_output
+    parameters:
+      command: "cmd.exe /c echo test > C:\\Temp\\csbot_runtest.txt"
+
+  # Verify it worked
+  - name: verify_run_no_output
+    type: shell
+    parameters:
+      command: "type C:\\Temp\\csbot_runtest.txt && del C:\\Temp\\csbot_runtest.txt"
+
+  # run_as - execute as another user
+  # Uncomment with valid lab credentials:
+  #
+  # - name: run_as_test
+  #   type: run_as
+  #   parameters:
+  #     domain: "YOURDOMAIN"
+  #     user: "testuser"
+  #     password: "TestPassword123!"
+  #     command: "cmd.exe"
+  #     args: "/c whoami"
+
+  # run_under - execute under a specific parent process
+  # Uncomment with a valid PID:
+  #
+  # - name: run_under_test
+  #   type: run_under
+  #   parameters:
+  #     pid: <REPLACE_WITH_PID>
+  #     command: "cmd.exe"
+  #     args: "/c whoami"
+
+  # -------------------------------------------------------
+  # PowerShell Variants
+  # -------------------------------------------------------
+
+  # Standard powershell (already tested in Phase 2)
+  - name: powershell_basic
+    type: powershell
+    parameters:
+      command: "Get-Process | Select-Object -First 5 Name,Id"
+
+  # powerpick - unmanaged PowerShell (no powershell.exe process)
+  - name: powerpick_test
+    type: powerpick
+    parameters:
+      commandlet: "Get-Process"
+      args: "| Select-Object -First 5 Name,Id"
+
+  # powershell_import - import a script
+  # Uncomment with a valid .ps1 path on the operator machine:
+  #
+  # - name: ps_import_test
+  #   type: powershell_import
+  #   parameters:
+  #     script: "/opt/scripts/PowerView.ps1"
+  #
+  # - name: ps_imported_cmd
+  #   type: powershell
+  #   parameters:
+  #     command: "Get-DomainUser -Identity testuser"
+
+  # psinject - inject PowerShell into a remote process
+  # Uncomment with a valid PID:
+  #
+  # - name: psinject_test
+  #   type: psinject
+  #   parameters:
+  #     pid: <REPLACE_WITH_PID>
+  #     arch: "x64"
+  #     commandlet: "Get-Process"
+  #     args: "| Select-Object -First 3 Name"
+
+  # -------------------------------------------------------
+  # .NET Assembly Execution
+  # -------------------------------------------------------
+
+  # execute_assembly - run inline .NET assembly
+  # Uncomment with a valid assembly path:
+  #
+  # - name: execute_assembly_test
+  #   type: execute_assembly
+  #   parameters:
+  #     assembly: "/opt/tools/Seatbelt.exe"
+  #     args: "all"
+
+  # -------------------------------------------------------
+  # Console Command (raw Aggressor-style)
+  # -------------------------------------------------------
+
+  - name: console_command_test
+    type: console_command
+    parameters:
+      command: "sleep"
+      arguments: "1 0"
+
+  # -------------------------------------------------------
+  # BOF Execution Variants
+  # -------------------------------------------------------
+
+  # All BOF tests require actual .o files on the operator machine.
+  # Using CS Situational Awareness BOFs as example paths.
+  # Uncomment the ones you have available:
+
+  # bof_string - BOF with a single string argument
+  #
+  # - name: bof_string_test
+  #   type: bof_string
+  #   parameters:
+  #     bof: "/opt/bofs/CS-Situational-Awareness-BOF/SA/whoami/whoami.x64.o"
+  #     entrypoint: "go"
+
+  # bof_pack - BOF with typed arguments (API-side packing)
+  # Note: Known issue - API bof_pack endpoint may not work.
+  #
+  # - name: bof_pack_test
+  #   type: bof_pack
+  #   parameters:
+  #     bof: "/opt/bofs/CS-Situational-Awareness-BOF/SA/dir/dir.x64.o"
+  #     entrypoint: "go"
+  #     arguments:
+  #       - type: string
+  #         value: "C:\\Windows"
+  #       - type: short
+  #         value: 0
+
+  # bof_pack_custom - client-side packing workaround
+  #
+  # - name: bof_pack_custom_test
+  #   type: bof_pack_custom
+  #   parameters:
+  #     bof: "/opt/bofs/CS-Situational-Awareness-BOF/SA/dir/dir.x64.o"
+  #     entrypoint: "go"
+  #     arguments:
+  #       - type: string
+  #         value: "C:\\Windows"
+  #       - type: short
+  #         value: 0
+
+  # bof_packed - BOF with pre-packed base64 arguments
+  # (Requires manually preparing the packed argument buffer)
+  #
+  # - name: bof_packed_test
+  #   type: bof_packed
+  #   parameters:
+  #     bof: "/opt/bofs/whoami.x64.o"
+  #     entrypoint: "go"
+  #     arguments: ""
