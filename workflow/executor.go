@@ -127,8 +127,10 @@ func (e *Executor) Execute(ctx context.Context, wf *Workflow, username, password
 		}
 		e.beacon = beacon
 		e.storeBeaconMetadata()
+		e.storeWorkflowVariables(wf.Variables)
 	} else {
 		e.logInfo("No beacon ID specified - server-level workflow")
+		e.storeWorkflowVariables(wf.Variables)
 	}
 
 	// Execute workflow
@@ -611,6 +613,8 @@ func (e *Executor) executeAction(ctx context.Context, client *csclient.Client, b
 	case "checkin":
 		return e.executeCheckin(ctx, client, beaconID)
 	case "console_command":
+		return e.executeConsoleCommand(ctx, client, beaconID, action)
+	case "consolecommand": // alias for console_command (main branch compatibility)
 		return e.executeConsoleCommand(ctx, client, beaconID, action)
 	case "list_jobs":
 		return e.executeListJobs(ctx, client, beaconID)
@@ -1408,4 +1412,19 @@ func (e *Executor) storeBeaconMetadata() {
 
 	e.logDebug("Stored beacon metadata for conditions: user=%s, isAdmin=%t, os=%s",
 		e.beacon.User, e.beacon.IsAdmin, e.beacon.OS)
+}
+
+// storeWorkflowVariables stores user-defined variables in outputs map for interpolation
+func (e *Executor) storeWorkflowVariables(variables map[string]string) {
+	if len(variables) == 0 {
+		return
+	}
+
+	e.outputMu.Lock()
+	defer e.outputMu.Unlock()
+
+	for name, value := range variables {
+		e.outputs[name] = value
+		e.logDebug("Stored workflow variable: %s = %s", name, value)
+	}
 }

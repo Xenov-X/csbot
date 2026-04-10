@@ -8,10 +8,11 @@ import (
 
 // Workflow represents a complete workflow definition
 type Workflow struct {
-	Name     string   `yaml:"name"`
-	BeaconID string   `yaml:"beacon_id,omitempty"` // Optional - if empty, will prompt user
-	Actions  []Action `yaml:"actions"`
-	Parallel bool     `yaml:"parallel,omitempty"` // Execute all actions in parallel
+	Name      string            `yaml:"name"`
+	BeaconID  string            `yaml:"beacon_id,omitempty"`  // Optional - if empty, will prompt user
+	Variables map[string]string `yaml:"variables,omitempty"`  // User-defined variables for interpolation
+	Actions   []Action          `yaml:"actions"`
+	Parallel  bool              `yaml:"parallel,omitempty"` // Execute all actions in parallel
 }
 
 // Action represents a single action in the workflow

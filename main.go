@@ -31,6 +31,14 @@ func main() {
 		outputFormat = flag.String("output", "text", "Output format: text, json, or csv")
 		outputFile   = flag.String("output-file", "", "Write output to file instead of stdout")
 		dryRun       = flag.Bool("dry-run", false, "Validate and show what would execute without running")
+		listBeacons  = flag.Bool("list-beacons", false, "List all beacons and exit")
+
+		// Beacon list filters (only applicable with -list-beacons)
+		listBeaconsUser     = flag.String("list-beacons-user", "", "Filter by username (partial match, requires -list-beacons)")
+		listBeaconsHostname = flag.String("list-beacons-hostname", "", "Filter by hostname (partial match, requires -list-beacons)")
+		listBeaconsAdmin    = flag.Bool("list-beacons-admin", false, "Only show admin beacons (requires -list-beacons)")
+		listBeaconsAlive    = flag.Bool("list-beacons-alive", false, "Only show alive beacons (requires -list-beacons)")
+		listBeaconsMinutes  = flag.Int("list-beacons-minutes", 0, "Only show beacons checked in within last N minutes (requires -list-beacons)")
 	)
 
 	flag.Parse()
@@ -75,6 +83,68 @@ func main() {
 		os.Exit(1)
 	}
 	log.Info("Starting Cobalt Strike automation bot")
+
+	// Handle list-beacons flag early, before workflow loading
+	if *listBeacons {
+		log.Info("Listing beacons...")
+
+		// Create custom HTTP client with TLS config
+		transport := &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: cfg.Server.Insecure,
+			},
+		}
+
+		// Configure proxy if specified
+		if cfg.Server.Proxy != "" {
+			proxyURL, err := url.Parse(cfg.Server.Proxy)
+			if err != nil {
+				log.Error("Invalid proxy URL: %v", err)
+				os.Exit(1)
+			}
+			transport.Proxy = http.ProxyURL(proxyURL)
+			log.Info("Using proxy: %s", cfg.Server.Proxy)
+		}
+
+		httpClient := &http.Client{
+			Timeout:   time.Duration(cfg.Timeouts.HTTPTimeout) * time.Second,
+			Transport: transport,
+		}
+
+		// Create API client
+		client := csclient.NewClient(cfg.Server.Host, cfg.Server.Port)
+		client.SetHTTPClient(httpClient)
+
+		ctx := context.Background()
+
+		// Authenticate
+		log.Info("Authenticating as %s...", cfg.Server.Username)
+		_, err = client.Login(ctx, cfg.Server.Username, cfg.Server.Password, 3600000)
+		if err != nil {
+			log.Error("Authentication failed: %v", err)
+			os.Exit(1)
+		}
+		log.Info("Authentication successful")
+
+		// Build filter from flags
+		var filter *selector.BeaconFilter
+		if *listBeaconsUser != "" || *listBeaconsHostname != "" || *listBeaconsAdmin || *listBeaconsAlive || *listBeaconsMinutes > 0 {
+			filter = &selector.BeaconFilter{
+				User:       *listBeaconsUser,
+				Hostname:   *listBeaconsHostname,
+				AdminOnly:  *listBeaconsAdmin,
+				AliveOnly:  *listBeaconsAlive,
+				MinutesAgo: *listBeaconsMinutes,
+			}
+		}
+
+		// List beacons and exit
+		if err := selector.ListBeacons(ctx, client, filter); err != nil {
+			log.Error("Failed to list beacons: %v", err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
 
 	// Read workflow configuration
 	wf, err := workflow.LoadWorkflow(*workflowFile)

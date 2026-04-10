@@ -43,7 +43,7 @@ func LoadConfig(filename string) (*Config, error) {
 	// Set defaults
 	cfg := &Config{
 		Server: ServerConfig{
-			Port:     50433,
+			Port:     50443,
 			Insecure: false,
 		},
 		Logging: LoggingConfig{

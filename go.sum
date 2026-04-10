@@ -1,3 +1,7 @@
+github.com/xenov-x/csrest v0.0.0-20251128204144-ea2a54ef7531 h1:GFcXw0IH097oDXqQ1hljQ7yqda8/Em5wweJwAQOcR60=
+github.com/xenov-x/csrest v0.0.0-20251128204144-ea2a54ef7531/go.mod h1:daF+kewe1EROIRsRyJaDwk/hfl+Z3fTYtJPsZUwtBk4=
+github.com/xenov-x/csrest v0.0.0-20251128215248-e72f830b03fc h1:dhPu8y5pezaq6gITEXpzOhEarAg//Rz+ICkNzcwAlC4=
+github.com/xenov-x/csrest v0.0.0-20251128215248-e72f830b03fc/go.mod h1:daF+kewe1EROIRsRyJaDwk/hfl+Z3fTYtJPsZUwtBk4=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=

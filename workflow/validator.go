@@ -31,6 +31,10 @@ func (v *Validator) Validate(ctx context.Context, wf *Workflow) []ValidationErro
 		})
 	}
 
+	// Validate variables
+	varErrors := v.validateVariables(wf)
+	errors = append(errors, varErrors...)
+
 	// Validate beacon ID if specified
 	if wf.BeaconID != "" && v.client != nil {
 		beacon, err := v.client.GetBeacon(ctx, wf.BeaconID)
@@ -69,6 +73,32 @@ func (v *Validator) Validate(ctx context.Context, wf *Workflow) []ValidationErro
 	for i, action := range wf.Actions {
 		actionErrors := v.validateAction(action, i, actionNames)
 		errors = append(errors, actionErrors...)
+	}
+
+	return errors
+}
+
+// validateVariables checks for valid variable names and potential conflicts
+func (v *Validator) validateVariables(wf *Workflow) []ValidationError {
+	var errors []ValidationError
+
+	for varName := range wf.Variables {
+		// Check for reserved prefixes
+		if strings.HasPrefix(varName, "beacon.") {
+			errors = append(errors, ValidationError{
+				Type:     "variable",
+				Message:  fmt.Sprintf("variable name '%s' conflicts with reserved 'beacon.' prefix", varName),
+				Severity: "warning",
+			})
+		}
+
+		// Check for empty variable names
+		if strings.TrimSpace(varName) == "" {
+			errors = append(errors, ValidationError{
+				Type:    "variable",
+				Message: "variable name cannot be empty",
+			})
+		}
 	}
 
 	return errors
@@ -234,6 +264,7 @@ func (v *Validator) validateAction(action Action, index int, seenNames map[strin
 		"clear_queue":      true,
 		"checkin":          true,
 		"console_command":  true,
+		"consolecommand":   true, // alias for console_command (main branch compatibility)
 		"list_jobs":        true,
 		// Server-level operations (no beacon required)
 		"list_listeners":              true,
