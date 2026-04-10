@@ -80,7 +80,7 @@ func (e *Executor) executeRev2Self(ctx context.Context, client *csclient.Client,
 		return "", err
 	}
 
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "rev2self")
 }
 
 // executeKerberosTicketUse applies a Kerberos ticket to the session
@@ -115,7 +115,7 @@ func (e *Executor) executeKerberosTicketPurge(ctx context.Context, client *cscli
 		return "", err
 	}
 
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "kerberos ticket purge")
 }
 
 // executeTokenStoreSteal steals a token and stores it in the token store
@@ -215,7 +215,7 @@ func (e *Executor) executeTokenStoreRemove(ctx context.Context, client *csclient
 		return "", err
 	}
 
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, fmt.Sprintf("token store remove %d", id))
 }
 
 // executeTokenStoreRemoveAll removes all tokens from the token store
@@ -225,7 +225,7 @@ func (e *Executor) executeTokenStoreRemoveAll(ctx context.Context, client *cscli
 		return "", err
 	}
 
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "token store remove all")
 }
 
 // executeTokenStoreList lists all tokens in the token store

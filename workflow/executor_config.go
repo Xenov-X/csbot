@@ -55,7 +55,7 @@ func (e *Executor) executeSetSleep(ctx context.Context, client *csclient.Client,
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, fmt.Sprintf("sleep %d %d", sleep, jitter))
 }
 
 // executeSetNote assigns a note to the beacon
@@ -69,7 +69,7 @@ func (e *Executor) executeSetNote(ctx context.Context, client *csclient.Client, 
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "set note")
 }
 
 // executeEnableBeaconGate enables beacon gate for the specified beacon
@@ -78,7 +78,7 @@ func (e *Executor) executeEnableBeaconGate(ctx context.Context, client *csclient
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "enable beacon gate")
 }
 
 // executeDisableBeaconGate disables beacon gate for the specified beacon
@@ -87,7 +87,7 @@ func (e *Executor) executeDisableBeaconGate(ctx context.Context, client *csclien
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "disable beacon gate")
 }
 
 // executeEnableBlockDlls enables block DLLs for the specified beacon
@@ -96,7 +96,7 @@ func (e *Executor) executeEnableBlockDlls(ctx context.Context, client *csclient.
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "enable blockdlls")
 }
 
 // executeDisableBlockDlls disables block DLLs for the specified beacon
@@ -105,7 +105,7 @@ func (e *Executor) executeDisableBlockDlls(ctx context.Context, client *csclient
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "disable blockdlls")
 }
 
 // executeSetSpawnto sets the spawn-to process for the specified beacon
@@ -124,7 +124,7 @@ func (e *Executor) executeSetSpawnto(ctx context.Context, client *csclient.Clien
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "set spawnto "+arch+" "+path)
 }
 
 // executeUnsetSpawnto unsets the spawn-to process for the specified beacon
@@ -133,7 +133,7 @@ func (e *Executor) executeUnsetSpawnto(ctx context.Context, client *csclient.Cli
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "unset spawnto")
 }
 
 // executeSetPpid sets the parent process ID for the specified beacon
@@ -157,7 +157,7 @@ func (e *Executor) executeSetPpid(ctx context.Context, client *csclient.Client, 
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, fmt.Sprintf("set ppid %d", ppid))
 }
 
 // executeUnsetPpid unsets the parent process ID for the specified beacon
@@ -166,7 +166,7 @@ func (e *Executor) executeUnsetPpid(ctx context.Context, client *csclient.Client
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "unset ppid")
 }
 
 // executeSetDnsMode sets the DNS beacon mode (dns, dns6, or dnsTxt)
@@ -180,7 +180,7 @@ func (e *Executor) executeSetDnsMode(ctx context.Context, client *csclient.Clien
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "set dns mode "+mode)
 }
 
 // executeSetSyscallMethod sets the syscall method for the beacon
@@ -194,7 +194,7 @@ func (e *Executor) executeSetSyscallMethod(ctx context.Context, client *csclient
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "set syscall method "+method)
 }
 
 // ============================================================
@@ -216,7 +216,7 @@ func (e *Executor) executeClearQueue(ctx context.Context, client *csclient.Clien
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "clear queue")
 }
 
 // executeCheckin forces a DNS beacon to check in immediately
@@ -225,7 +225,7 @@ func (e *Executor) executeCheckin(ctx context.Context, client *csclient.Client, 
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "checkin")
 }
 
 // executeConsoleCommand executes a console command on the beacon

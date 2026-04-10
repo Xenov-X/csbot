@@ -1,4 +1,5 @@
 name: "Phase 8: Beacon Configuration Test"
+# beacon_id: ""
 # Beacon ID omitted - will prompt for interactive selection
 #
 # Tests: beacon_info, set_sleep, set_note, beacon_gate,
@@ -186,8 +187,8 @@ actions:
   - name: restore_sleep
     type: set_sleep
     parameters:
-      sleep: 60
-      jitter: 25
+      sleep: 1
+      jitter: 0
 
   # Final beacon info to verify state
   - name: final_beacon_info

@@ -1,4 +1,5 @@
 name: "Phase 7: Spawn & Inject Operations Test"
+# beacon_id: ""
 # Beacon ID omitted - will prompt for interactive selection
 #
 # Tests: spawn_beacon, spawn_beacon_as_user, spawn_beacon_under,

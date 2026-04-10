@@ -1,6 +1,6 @@
 name: "Phase 2: Basic Beacon Operations Test"
-beacon_id: "1515016332"
-# Beacon ID set for non-interactive execution
+# beacon_id: ""
+# Beacon ID omitted - will prompt for interactive selection
 #
 # Tests: identity, file/dir ops, process mgmt, shell, powershell,
 #        screenshot, sleep, environment variables
@@ -108,13 +108,7 @@ actions:
     any_of:
       - source: beacon.os
         operator: contains
-        value: "Windows 10"
-      - source: beacon.os
-        operator: contains
-        value: "Windows 11"
-      - source: beacon.os
-        operator: contains
-        value: "Windows Server"
+        value: "Windows"
 
   # -------------------------------------------------------
   # Process Management

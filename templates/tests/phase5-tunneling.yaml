@@ -1,4 +1,5 @@
 name: "Phase 5: Tunneling & Pivoting Test"
+# beacon_id: ""
 # Beacon ID omitted - will prompt for interactive selection
 #
 # Tests: SOCKS proxies (v4, v5), reverse port forwards, browser pivots,

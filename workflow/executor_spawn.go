@@ -88,7 +88,7 @@ func (e *Executor) executeRunNoOutput(ctx context.Context, client *csclient.Clie
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "execute (no output): "+cmd)
 }
 
 // --- Privilege Elevation ---

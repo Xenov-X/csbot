@@ -856,6 +856,15 @@ func (e *Executor) executeSleep(action Action) (string, error) {
 	return "slept", nil
 }
 
+// fireAndForget is used for commands known to never produce output from the beacon.
+// The API accepted the command and returned a task ID, so we just return a success message.
+// These are commands like cd, mkdir, sleep, set_note, etc. that the beacon acknowledges
+// but never sends results for.
+func (e *Executor) fireAndForget(taskID string, description string) (string, error) {
+	e.logDebug("Fire-and-forget command accepted (taskID: %s): %s", taskID, description)
+	return fmt.Sprintf("Acknowledged: %s (taskID: %s)", description, taskID), nil
+}
+
 // waitForOutput waits for task output
 func (e *Executor) waitForOutput(ctx context.Context, client *csclient.Client, taskID string) (string, error) {
 	e.logDebug("Waiting for task output (taskID: %s, timeout: %s)", taskID, e.taskTimeout)
@@ -1162,7 +1171,7 @@ func (e *Executor) executeCd(ctx context.Context, client *csclient.Client, beaco
 		return "", err
 	}
 
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "cd "+path)
 }
 
 // executeLs lists directory contents
@@ -1199,7 +1208,7 @@ func (e *Executor) executeMkdir(ctx context.Context, client *csclient.Client, be
 		return "", err
 	}
 
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "mkdir "+folder)
 }
 
 // executeCp copies a file
@@ -1218,7 +1227,7 @@ func (e *Executor) executeCp(ctx context.Context, client *csclient.Client, beaco
 		return "", err
 	}
 
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "cp "+src+" "+dst)
 }
 
 // executeMv moves/renames a file
@@ -1237,7 +1246,7 @@ func (e *Executor) executeMv(ctx context.Context, client *csclient.Client, beaco
 		return "", err
 	}
 
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "mv "+source+" "+destination)
 }
 
 // executeRm removes a file or folder
@@ -1252,7 +1261,7 @@ func (e *Executor) executeRm(ctx context.Context, client *csclient.Client, beaco
 		return "", err
 	}
 
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "rm "+path)
 }
 
 // executeDrives lists drives
@@ -1281,7 +1290,7 @@ func (e *Executor) executeTimestomp(ctx context.Context, client *csclient.Client
 		return "", err
 	}
 
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "timestomp "+source+" "+destination)
 }
 
 // --- Process Management Handlers ---
@@ -1344,7 +1353,7 @@ func (e *Executor) executeSetEnv(ctx context.Context, client *csclient.Client, b
 		return "", err
 	}
 
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "setenv "+key+"="+value)
 }
 
 // executeExit tells the beacon to exit
@@ -1354,7 +1363,7 @@ func (e *Executor) executeExit(ctx context.Context, client *csclient.Client, bea
 		return "", err
 	}
 
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "exit")
 }
 
 // executeJobStop stops an active job

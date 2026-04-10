@@ -1,4 +1,5 @@
 name: "Phase 9: Capture Operations Test"
+# beacon_id: ""
 # Beacon ID omitted - will prompt for interactive selection
 #
 # Tests: keylogger, screenwatch, printscreen, clipboard,

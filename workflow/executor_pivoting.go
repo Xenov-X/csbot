@@ -22,7 +22,7 @@ func (e *Executor) executeLinkSmb(ctx context.Context, client *csclient.Client, 
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "link smb "+target)
 }
 
 // executeLinkTcp connects to a TCP beacon and re-establishes control
@@ -48,7 +48,7 @@ func (e *Executor) executeLinkTcp(ctx context.Context, client *csclient.Client, 
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "link tcp "+target)
 }
 
 // executeUnlink disconnects from a named pipe or TCP beacon
@@ -74,7 +74,7 @@ func (e *Executor) executeUnlink(ctx context.Context, client *csclient.Client, b
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "unlink "+host)
 }
 
 // executeSsh spawns a temporary process to run an SSH client with username/password
@@ -224,7 +224,7 @@ func (e *Executor) executeSocks4Start(ctx context.Context, client *csclient.Clie
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, fmt.Sprintf("socks4 start port %d", port))
 }
 
 // executeSocks5Start starts a SOCKS5 server on the specified port with optional authentication
@@ -262,7 +262,7 @@ func (e *Executor) executeSocks5Start(ctx context.Context, client *csclient.Clie
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, fmt.Sprintf("socks5 start port %d", port))
 }
 
 // executeSocksStopAll stops all SOCKS servers and terminates existing connections
@@ -271,7 +271,7 @@ func (e *Executor) executeSocksStopAll(ctx context.Context, client *csclient.Cli
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "socks stop all")
 }
 
 // executeSocksStop stops the specific SOCKS server on the given port
@@ -295,7 +295,7 @@ func (e *Executor) executeSocksStop(ctx context.Context, client *csclient.Client
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, fmt.Sprintf("socks stop port %d", port))
 }
 
 // executeRportfwdStart starts reverse port forwarding on the specified bind port
@@ -339,7 +339,7 @@ func (e *Executor) executeRportfwdStart(ctx context.Context, client *csclient.Cl
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, fmt.Sprintf("rportfwd start %d -> %s:%d", bindPort, forwardHost, forwardPort))
 }
 
 // executeRportfwdStop stops reverse port forwarding on the specific bind port
@@ -363,7 +363,7 @@ func (e *Executor) executeRportfwdStop(ctx context.Context, client *csclient.Cli
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, fmt.Sprintf("rportfwd stop %d", bindPort))
 }
 
 // executeBrowserPivotStart starts a browser pivot into the specified process
@@ -397,7 +397,7 @@ func (e *Executor) executeBrowserPivotStart(ctx context.Context, client *csclien
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, fmt.Sprintf("browser pivot start pid %d", pid))
 }
 
 // executeBrowserPivotStop tears down the browser pivoting sessions associated with this beacon
@@ -406,5 +406,5 @@ func (e *Executor) executeBrowserPivotStop(ctx context.Context, client *csclient
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "browser pivot stop")
 }

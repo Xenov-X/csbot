@@ -1,4 +1,5 @@
 name: "Phase 6: Execution Variants Test"
+# beacon_id: ""
 # Beacon ID omitted - will prompt for interactive selection
 #
 # Tests: run, run_no_output, run_as, run_under, powershell_import,
@@ -26,13 +27,13 @@ actions:
   - name: run_no_output_test
     type: run_no_output
     parameters:
-      command: "cmd.exe /c echo test > C:\\Temp\\csbot_runtest.txt"
+      command: "cmd.exe /c echo test > C:\\Windows\\Temp\\csbot_runtest.txt"
 
   # Verify it worked
   - name: verify_run_no_output
     type: shell
     parameters:
-      command: "type C:\\Temp\\csbot_runtest.txt && del C:\\Temp\\csbot_runtest.txt"
+      command: "type C:\\Windows\\Temp\\csbot_runtest.txt && del C:\\Windows\\Temp\\csbot_runtest.txt"
 
   # run_as - execute as another user
   # Uncomment with valid lab credentials:
@@ -117,8 +118,7 @@ actions:
   - name: console_command_test
     type: console_command
     parameters:
-      command: "sleep"
-      arguments: "1 0"
+      command: "getuid"
 
   # -------------------------------------------------------
   # BOF Execution Variants

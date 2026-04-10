@@ -1,5 +1,6 @@
 name: "Set Fast Sleep"
-beacon_id: "1515016332"
+# beacon_id: ""
+# Beacon ID omitted - will prompt for interactive selection
 actions:
   - name: set_fast_sleep
     type: set_sleep

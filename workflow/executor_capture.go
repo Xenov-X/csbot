@@ -9,22 +9,22 @@ import (
 
 // --- Capture Operation Handlers ---
 
-// executeKeylogger starts a keylogger on the beacon
+// executeKeylogger starts a keylogger on the beacon (long-running background job)
 func (e *Executor) executeKeylogger(ctx context.Context, client *csclient.Client, beaconID string) (string, error) {
 	resp, err := client.SpawnKeylogger(ctx, beaconID)
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "keylogger started")
 }
 
-// executeScreenwatch starts screenwatch on the beacon
+// executeScreenwatch starts screenwatch on the beacon (long-running background job)
 func (e *Executor) executeScreenwatch(ctx context.Context, client *csclient.Client, beaconID string) (string, error) {
 	resp, err := client.SpawnScreenwatch(ctx, beaconID)
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "screenwatch started")
 }
 
 // executePrintscreen captures a screenshot using print screen method
@@ -58,5 +58,5 @@ func (e *Executor) executeCancelDownload(ctx context.Context, client *csclient.C
 	if err != nil {
 		return "", err
 	}
-	return e.waitForOutput(ctx, client, resp.TaskID)
+	return e.fireAndForget(resp.TaskID, "cancel download "+file)
 }

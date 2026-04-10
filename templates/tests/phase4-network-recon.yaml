@@ -1,4 +1,5 @@
 name: "Phase 4: Network Reconnaissance Test"
+# beacon_id: ""
 # Beacon ID omitted - will prompt for interactive selection
 #
 # Tests: net_* commands (domain, view, user, share, sessions, logons,
@@ -47,6 +48,8 @@ actions:
   # Enumerate a specific user (self)
   - name: net_user_detail
     type: net_user_detail
+    parameters:
+      user: "youruser"
 
   - name: net_localgroup
     type: net_localgroup
